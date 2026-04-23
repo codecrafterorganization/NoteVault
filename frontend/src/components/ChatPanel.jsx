@@ -75,15 +75,15 @@ const ChatPanel = ({ noteId, highlightedText }) => {
 
   return (
     <div className="h-full flex flex-col cinematic-glass rounded-3xl overflow-hidden premium-surface relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/[0.02] to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
       
       <div className="h-16 flex items-center px-6 border-b border-white/[0.05] relative z-10 gap-3">
-        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-          <Sparkles size={14} className="text-emerald-400" />
+        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+          <Sparkles size={14} className="text-white" />
         </div>
         <div>
           <h2 className="text-sm font-semibold tracking-wide text-white">Study Buddy</h2>
-          <p className="text-[10px] text-emerald-400 font-medium">Online • Reading Context</p>
+          <p className="text-[10px] text-slate-400 font-medium">Online • Reading Context</p>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ const ChatPanel = ({ noteId, highlightedText }) => {
           <div key={idx} className={`flex gap-4 max-w-[90%] ${msg.role === 'user' ? 'self-end bg-white/[0.04] p-4 rounded-2xl rounded-tr-sm border border-slate-700/30' : 'self-start'}`}>
             {msg.role === 'assistant' && (
               <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 flex-shrink-0 mt-1">
-                <Bot size={16} className="text-emerald-400" />
+                <Bot size={16} className="text-white" />
               </div>
             )}
             <div className={`flex flex-col gap-1 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
@@ -102,8 +102,8 @@ const ChatPanel = ({ noteId, highlightedText }) => {
               <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
             </div>
             {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 flex-shrink-0 mt-1">
-                <User size={16} className="text-emerald-400" />
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 flex-shrink-0 mt-1">
+                <User size={16} className="text-white" />
               </div>
             )}
           </div>
@@ -111,7 +111,7 @@ const ChatPanel = ({ noteId, highlightedText }) => {
         {isLoading && (
           <div className="flex gap-4 max-w-[90%] self-start opacity-70">
             <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 flex-shrink-0 mt-1">
-              <Loader2 size={16} className="text-emerald-400 animate-spin" />
+              <Loader2 size={16} className="text-white animate-spin" />
             </div>
             <div className="flex items-center text-sm text-slate-400 p-2">
               Processing...

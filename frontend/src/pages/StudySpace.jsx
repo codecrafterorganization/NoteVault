@@ -67,31 +67,31 @@ const StudySpace = () => {
           <div className="flex bg-white/[0.02] border border-slate-700/50 rounded-2xl p-1 gap-1 shrink-0">
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'chat' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'chat' ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
               Study Buddy
             </button>
             <button 
               onClick={() => setActiveTab('quiz')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'quiz' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'quiz' ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
               Quizzes
             </button>
             <button 
               onClick={() => setActiveTab('cheatsheet')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'cheatsheet' ? 'bg-orange-500/20 text-orange-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'cheatsheet' ? 'bg-white/10 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
               Cheat Sheet
             </button>
             <button 
               onClick={() => setActiveTab('graph')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'graph' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'graph' ? 'bg-white/10 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
               Mind Map
             </button>
             <button 
               onClick={() => setActiveTab('sandbox')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'sandbox' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'sandbox' ? 'bg-slate-700/40 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
               Sandbox
             </button>

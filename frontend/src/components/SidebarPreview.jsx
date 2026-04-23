@@ -80,8 +80,8 @@ const SidebarPreview = () => {
             {/* Pen / Bookmark Element */}
             <path
               d="M50 20 L55 30 L50 40 L45 30 Z"
-              fill="rgba(212, 175, 55, 0.8)"
-              stroke="#D4AF37"
+              fill="rgba(255, 255, 255, 0.8)"
+              stroke="#FFFFFF"
               strokeWidth="2"
               strokeLinejoin="round"
             />

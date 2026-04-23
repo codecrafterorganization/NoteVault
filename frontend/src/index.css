@@ -5,11 +5,11 @@
 @tailwind utilities;
 
 :root {
-  --bg-deep: #0A0D14;
-  --bg-fog: #111520;
-  --text-pure: #F8FAFC;
+  --bg-deep: #000000;
+  --bg-fog: #0A0D14;
+  --text-pure: #FFFFFF;
   --text-muted: #94A3B8;
-  --accent-gold: #D4AF37;
+  --accent-gold: #FFFFFF;
   --font-quote: 'Playfair Display', serif;
 }
 

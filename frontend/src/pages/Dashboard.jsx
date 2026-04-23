@@ -30,7 +30,7 @@ const Dashboard = () => {
              id: n.id,
              title: n.title || `Note ${i+1}`,
              type: n.fileType || 'Document',
-             color: 'bg-indigo-500/20 text-indigo-400',
+             color: 'bg-slate-800 text-slate-300',
              createdAt: n.createdAt
           }));
           setNotes(mapped.slice(0, 4));
@@ -168,7 +168,7 @@ const Dashboard = () => {
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600/90 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/40 border border-indigo-500/30 font-sans"
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-200 text-black rounded-xl text-sm font-medium transition-all shadow-lg shadow-white/5 border border-white/20 font-sans"
               >
                 {isUploading ? (
                   <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
@@ -189,7 +189,7 @@ const Dashboard = () => {
                   <button 
                     onClick={handleFuseNotes}
                     disabled={isMerging || selectedNotes.length < 2}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-medium transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-white text-slate-900 rounded-xl text-sm font-medium transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] disabled:opacity-50"
                   >
                     {isMerging ? 'Fusing...' : `Fuse Notes (${selectedNotes.length})`}
                   </button>
@@ -197,7 +197,7 @@ const Dashboard = () => {
               ) : (
                 <button 
                   onClick={() => setIsMergeMode(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-purple-600/20 text-purple-400 hover:text-purple-300 border border-purple-500/20 hover:border-purple-500/50 rounded-xl text-sm font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-white/10 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-500 rounded-xl text-sm font-medium transition-all"
                 >
                   🧠 Group Brain
                 </button>
@@ -238,11 +238,11 @@ const Dashboard = () => {
                         <div 
                            key={note.id} 
                            onClick={(e) => isMergeMode ? toggleNoteSelection(e, note.id) : navigate(`/study/${note.id}`)}
-                           className={`p-5 rounded-2xl border transition-all cursor-pointer group relative ${isSelected ? 'bg-purple-900/40 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-white/[0.02] border-slate-700/50 hover:bg-white/[0.05] hover:border-slate-500/80'}`}
+                         className={`p-5 rounded-2xl border transition-all cursor-pointer group relative ${isSelected ? 'bg-white/[0.08] border-white shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-white/[0.02] border-slate-700/50 hover:bg-white/[0.05] hover:border-slate-500/80'}`}
                         >
                           {isMergeMode && (
-                            <div className={`absolute top-3 right-3 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-slate-500'}`}>
-                              {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                            <div className={`absolute top-3 right-3 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-white border-white' : 'border-slate-500'}`}>
+                              {isSelected && <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                             </div>
                           )}
                           <div className="flex items-center justify-between mb-4">

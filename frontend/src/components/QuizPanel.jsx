@@ -70,7 +70,7 @@ const QuizPanel = ({ noteId }) => {
   if (isLoading) {
     return (
       <div className="h-full flex flex-col cinematic-glass rounded-3xl premium-surface flex items-center justify-center">
-        <Loader2 size={40} className="text-purple-500 animate-spin mb-4" />
+        <Loader2 size={40} className="text-white animate-spin mb-4" />
         <h3 className="text-xl font-semibold text-white">Generating Quiz...</h3>
         <p className="text-sm text-slate-400 mt-2">Our AI is reading your notes to create MCQs.</p>
       </div>
@@ -80,8 +80,8 @@ const QuizPanel = ({ noteId }) => {
   if (isFinished) {
     return (
       <div className="h-full flex flex-col cinematic-glass rounded-3xl premium-surface flex items-center justify-center p-8 text-center">
-        <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center border border-purple-500/40 mb-6">
-          <CheckCircle size={40} className="text-purple-400" />
+        <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center border border-white/20 mb-6">
+          <CheckCircle size={40} className="text-white" />
         </div>
         <h2 className="text-3xl font-bold text-white mb-2">Quiz Complete!</h2>
         <p className="text-lg text-slate-300 mb-8">You scored <span className="font-bold text-emerald-400">{score}</span> out of {questions.length}</p>
@@ -98,7 +98,7 @@ const QuizPanel = ({ noteId }) => {
           ))}
         </div>
 
-        <button onClick={generateQuiz} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all font-semibold shadow-lg shadow-purple-500/20">
+        <button onClick={generateQuiz} className="px-6 py-3 bg-white text-black hover:bg-slate-200 rounded-xl transition-all font-semibold shadow-lg shadow-white/10">
           Generate Another Quiz
         </button>
       </div>
@@ -135,13 +135,13 @@ const QuizPanel = ({ noteId }) => {
 
   return (
     <div className="h-full flex flex-col cinematic-glass rounded-3xl overflow-hidden premium-surface relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.03] to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
       
       {/* Quiz Header */}
       <div className="h-16 flex justify-between items-center px-6 border-b border-white/[0.05] relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-            <HelpCircle size={16} className="text-purple-400" />
+          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+            <HelpCircle size={16} className="text-white" />
           </div>
           <span className="font-semibold text-white tracking-wide">Knowledge Check</span>
         </div>
@@ -196,16 +196,16 @@ const QuizPanel = ({ noteId }) => {
 
         {/* Explanation Box */}
         {showExplanation && (
-          <div className="mt-auto p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200 animate-in fade-in slide-in-from-bottom-4 flex gap-4">
-            <Lightbulb size={20} className="text-purple-400 shrink-0 mt-0.5" />
+          <div className="mt-auto p-4 rounded-xl bg-white/10 border border-white/20 text-slate-100 animate-in fade-in slide-in-from-bottom-4 flex gap-4">
+            <Lightbulb size={20} className="text-white shrink-0 mt-0.5" />
             <div className="flex-1 flex flex-col gap-3">
                <div>
-                  <h4 className="font-semibold text-purple-300 text-sm mb-1">AI Explanation</h4>
+                  <h4 className="font-semibold text-white text-sm mb-1">AI Explanation</h4>
                   <p className="text-sm opacity-90 leading-relaxed">{q.explanation}</p>
                </div>
                <button 
                  onClick={nextQuestion}
-                 className="self-end flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors text-sm font-semibold"
+                 className="self-end flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-semibold"
                >
                  Next Question <ArrowRight size={16} />
                </button>
