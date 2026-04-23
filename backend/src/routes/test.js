@@ -16,29 +16,41 @@ router.post('/generate', async (req, res) => {
   const { noteId, difficulty = 'Beginner' } = req.body;
 
   try {
-    // 1. Fetch note content
-    const { data: note, error: fetchError } = await supabase
-      .from('notes')
-      .select('*')
-      .eq('id', noteId)
-      .single();
+    let noteContent = '';
+    
+    if (noteId.startsWith('dummy-')) {
+      // Mock content for demo purposes
+      noteContent = `This is a sample study guide about ${noteId.replace('dummy-', '').replace(/-/g, ' ')}. 
+      It covers core concepts, historical context, and modern applications. 
+      Important topics include efficiency, systemic integration, and theoretical frameworks.`;
+    } else {
+      // 1. Fetch note content
+      const { data: note, error: fetchError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id', noteId)
+        .single();
 
-    if (fetchError || !note) return res.status(404).json({ success: false, error: 'Note not found.' });
+      if (fetchError || !note) return res.status(404).json({ success: false, error: 'Note not found.' });
+      noteContent = note.content;
+    }
 
     // 2. Generate questions via AI
-    const questions = await TestService.generateTestQuestions(note.content, difficulty);
+    const questions = await TestService.generateTestQuestions(noteContent, difficulty);
 
     // 3. Create session record
     const sessionId = uuidv4();
-    const { error: sessionError } = await supabase.from('test_sessions').insert([{
-      id: sessionId,
-      note_id: noteId,
-      difficulty,
-      status: 'in_progress',
-      total_questions: questions.length
-    }]);
+    if (!noteId.startsWith('dummy-')) {
+      const { error: sessionError } = await supabase.from('test_sessions').insert([{
+        id: sessionId,
+        note_id: noteId,
+        difficulty,
+        status: 'in_progress',
+        total_questions: questions.length
+      }]);
 
-    if (sessionError) console.warn('[TestMode] Could not save session to DB:', sessionError.message);
+      if (sessionError) console.warn('[TestMode] Could not save session to DB:', sessionError.message);
+    }
 
     res.json({
       success: true,

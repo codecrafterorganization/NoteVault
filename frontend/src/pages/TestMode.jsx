@@ -31,10 +31,10 @@ const TestMode = () => {
   ];
 
   const dummyNotes = [
-    { id: '1', title: 'Biology: Cellular Respiration' },
-    { id: '2', title: 'Advanced Thermodynamics' },
-    { id: '3', title: 'Organic Chemistry II' },
-    { id: '4', title: 'Quantum Mechanics Basics' }
+    { id: 'dummy-biology', title: 'Biology: Cellular Respiration' },
+    { id: 'dummy-thermo', title: 'Advanced Thermodynamics' },
+    { id: 'dummy-chem', title: 'Organic Chemistry II' },
+    { id: 'dummy-quantum', title: 'Quantum Mechanics Basics' }
   ];
 
   useEffect(() => {
