@@ -22,10 +22,10 @@ const Dashboard = () => {
   const [isMerging, setIsMerging] = useState(false);
 
   const dummyNotes = [
-    { id: '1', title: 'Biology: Cellular Respiration', type: 'Study Guide', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: '2', title: 'Advanced Thermodynamics', type: 'Lecture Notes', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: '3', title: 'Organic Chemistry II', type: 'Summary', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: '4', title: 'Quantum Mechanics Basics', type: 'Formula Sheet', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: 'dummy-biology', title: 'Biology: Cellular Respiration', type: 'Study Guide', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: 'dummy-thermo', title: 'Advanced Thermodynamics', type: 'Lecture Notes', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: 'dummy-chem', title: 'Organic Chemistry II', type: 'Summary', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: 'dummy-quantum', title: 'Quantum Mechanics Basics', type: 'Formula Sheet', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
   ];
 
   const fetchNotes = () => {

@@ -9,12 +9,12 @@ const Notebooks = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const dummyNotes = [
-    { id: '1', title: 'Biology: Cellular Respiration', fileType: 'Study Guide', createdAt: new Date().toISOString() },
-    { id: '2', title: 'Advanced Thermodynamics', fileType: 'Lecture Notes', createdAt: new Date().toISOString() },
-    { id: '3', title: 'Organic Chemistry II', fileType: 'Summary', createdAt: new Date().toISOString() },
-    { id: '4', title: 'Quantum Mechanics Basics', fileType: 'Formula Sheet', createdAt: new Date().toISOString() },
-    { id: '5', title: 'Modern World History', fileType: 'Essay', createdAt: new Date().toISOString() },
-    { id: '6', title: 'Macroeconomics 101', fileType: 'Review', createdAt: new Date().toISOString() },
+    { id: 'dummy-biology', title: 'Biology: Cellular Respiration', fileType: 'Study Guide', createdAt: new Date().toISOString() },
+    { id: 'dummy-thermo', title: 'Advanced Thermodynamics', fileType: 'Lecture Notes', createdAt: new Date().toISOString() },
+    { id: 'dummy-chem', title: 'Organic Chemistry II', fileType: 'Summary', createdAt: new Date().toISOString() },
+    { id: 'dummy-quantum', title: 'Quantum Mechanics Basics', fileType: 'Formula Sheet', createdAt: new Date().toISOString() },
+    { id: 'dummy-history', title: 'Modern World History', fileType: 'Essay', createdAt: new Date().toISOString() },
+    { id: 'dummy-macro', title: 'Macroeconomics 101', fileType: 'Review', createdAt: new Date().toISOString() },
   ];
 
   useEffect(() => {
