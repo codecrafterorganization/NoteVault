@@ -21,6 +21,13 @@ const Dashboard = () => {
   const [selectedNotes, setSelectedNotes] = useState([]);
   const [isMerging, setIsMerging] = useState(false);
 
+  const dummyNotes = [
+    { id: '1', title: 'Biology: Cellular Respiration', type: 'Study Guide', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: '2', title: 'Advanced Thermodynamics', type: 'Lecture Notes', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: '3', title: 'Organic Chemistry II', type: 'Summary', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+    { id: '4', title: 'Quantum Mechanics Basics', type: 'Formula Sheet', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
+  ];
+
   const fetchNotes = () => {
     fetch('http://localhost:5000/api/notes')
       .then(res => res.json())
@@ -35,10 +42,13 @@ const Dashboard = () => {
           }));
           setNotes(mapped.slice(0, 4));
         } else {
-          setNotes([]);
+          setNotes(dummyNotes);
         }
       })
-      .catch(err => console.error("Could not fetch notes:", err));
+      .catch(err => {
+        console.error("Could not fetch notes:", err);
+        setNotes(dummyNotes);
+      });
   };
 
   useEffect(() => {

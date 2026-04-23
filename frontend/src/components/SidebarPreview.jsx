@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, BookOpen, Search, Folder, Hash, Settings, User, Brain, Activity } from 'lucide-react';
 import gsap from 'gsap';
@@ -10,6 +11,8 @@ const SidebarPreview = () => {
     if (label === 'Dashboard') navigate('/dashboard');
     else if (label === 'Performance') navigate('/performance');
     else if (label === 'Test Mode') navigate('/test/general');
+    else if (label === 'My Notebooks') navigate('/notebooks');
+    else if (label === 'Search Library') navigate('/search');
     else {
       alert(`The ${label} feature is planned for the post-hackathon release! 🚀`);
     }
@@ -115,6 +118,8 @@ const SidebarPreview = () => {
             <span className="text-xs font-medium">Dashboard</span>
             <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
           </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2 mb-2">Library</span>
           <div onClick={() => handleNavClick('My Notebooks')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
             <BookOpen size={16} className="group-hover:text-slate-300" />
             <span className="text-xs font-medium">My Notebooks</span>
@@ -122,18 +127,6 @@ const SidebarPreview = () => {
           <div onClick={() => handleNavClick('Search Library')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
             <Search size={16} className="group-hover:text-slate-300" />
             <span className="text-xs font-medium">Search Library</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2 mb-2">Library</span>
-          <div onClick={() => handleNavClick('All Documents')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
-            <Folder size={16} className="group-hover:text-slate-300" />
-            <span className="text-xs font-medium">All Documents</span>
-          </div>
-          <div onClick={() => handleNavClick('Tags & Topics')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
-            <Hash size={16} className="group-hover:text-slate-300" />
-            <span className="text-xs font-medium">Tags & Topics</span>
           </div>
         </div>
 
