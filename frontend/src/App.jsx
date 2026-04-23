@@ -8,6 +8,7 @@ import TestMode from './pages/TestMode';
 import Performance from './pages/Performance';
 import Notebooks from './pages/Notebooks';
 import Search from './pages/Search';
+import BattleMode from './pages/BattleMode';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/performance" element={<Performance />} />
         <Route path="/notebooks" element={<Notebooks />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/battle" element={<BattleMode />} />
       </Routes>
     </div>
   );

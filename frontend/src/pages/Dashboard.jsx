@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload, Brain } from 'lucide-react';
+import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload, Brain, LogOut, User } from 'lucide-react';
 import gsap from 'gsap';
 import SidebarPreview from '../components/SidebarPreview';
-import AuthDrawer from '../components/AuthDrawer';
+import AuthPanel from '../components/AuthPanel';
 import KnowledgeGraph from '../components/KnowledgeGraph';
 import ToDoList from '../components/ToDoList';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const containerRef = useRef(null);
   const contentRef = useRef(null);
@@ -157,7 +159,7 @@ const Dashboard = () => {
   return (
     <div ref={containerRef} className="relative w-full min-h-screen bg-transparent overflow-hidden text-slate-100">
       <div ref={contentRef} className="flex w-full h-screen">
-        <SidebarPreview />
+        <SidebarPreview onSignIn={() => setIsAuthOpen(true)} onUpload={fetchNotes} />
 
         <main className="flex-1 flex flex-col h-full bg-transparent relative z-10 p-6 gap-6">
           
@@ -213,12 +215,38 @@ const Dashboard = () => {
                 </button>
               )}
 
-              <button 
-                onClick={() => setIsAuthOpen(true)}
-                className="mono-button mono-button-solid shadow-md"
-              >
-                Sign In
-              </button>
+              {/* Auth button - shows user avatar if logged in */}
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="avatar" className="w-6 h-6 rounded-full" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                        <User size={12} className="text-slate-300" />
+                      </div>
+                    )}
+                    <span className="text-xs text-slate-300 font-medium max-w-[100px] truncate">
+                      {user.displayName || user.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  <button
+                    onClick={signOut}
+                    className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                    title="Sign Out"
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-[#111111] bg-[#F4F4F5] hover:bg-white transition-colors duration-150"
+                  style={{ boxShadow: 'rgba(0,0,0,0.9) 0px 4px 8px 0px inset, rgba(255,255,255,0.08) 0px 1px 1px 0px' }}
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </header>
 
@@ -356,13 +384,13 @@ const Dashboard = () => {
         </main>
       </div>
 
-      <AuthDrawer 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
-        onLogin={(u) => {
+      <AuthPanel
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={(u) => {
           setIsAuthOpen(false);
-          console.log("Logged in:", u);
-        }} 
+          console.log('[Auth] Logged in:', u?.email);
+        }}
       />
     </div>
   );

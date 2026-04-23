@@ -10,12 +10,12 @@ if (!apiKey) {
 }
 
 // Default model configuration
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const DEFAULT_MODEL = 'gemini-flash-latest';
 
 // Track API failures for fallback mode
 let apiQuotaExceeded = false;
 let apiCallCount = 0;
-const MAX_API_CALLS = 200; // High limit for development/demo use
+const MAX_API_CALLS = 1000; // High limit for demo
 
 /**
  * Generate content using Gemini AI
@@ -28,45 +28,39 @@ async function generateContent(prompt, options = {}) {
     throw new Error('Gemini API not initialized. Please set GEMINI_API_KEY in .env');
   }
 
-  // Check if we should use fallback mode
-  if (apiQuotaExceeded || apiCallCount >= MAX_API_CALLS) {
-    console.log('[Gemini] Using fallback mode (API quota exceeded or call limit reached)');
+  if (apiQuotaExceeded) {
+    console.log('[Gemini] Using fallback mode (API quota exceeded)');
     return generateFallbackResponse(prompt);
   }
 
   try {
     const modelStr = options.model || DEFAULT_MODEL;
-    console.log('[Gemini] Sending prompt:', prompt.substring(0, 100) + '...');
+    console.log('[Gemini] Sending prompt to', modelStr, ':', prompt.substring(0, 100) + '...');
     
-    // Reasonable timeout of 10 seconds now that the IPv6 bug is fixed.
-    // Responses will natively return in < 1.0 second!
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
     const result = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelStr}:generateContent?key=${apiKey}`,
       {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens || 512,
+          maxOutputTokens: options.maxTokens || 1024,
         }
-      },
-      { signal: controller.signal }
+      }
     );
-    clearTimeout(timeoutId);
 
     const text = result.data.candidates[0].content.parts[0].text;
-
     apiCallCount++;
-    console.log('[Gemini] Response received:', text.substring(0, 100) + '...');
-    console.log('[Gemini] API call count:', apiCallCount);
+    console.log('[Gemini] Response received ✓ (call #' + apiCallCount + ')');
     return text;
   } catch (error) {
-    console.error('[Gemini] Axios error or timeout:', error.message);
-    
-    // Instantly fallback if the API is too slow or errors out.
-    // This perfectly honors the <= 2s rule "chahe jo marji ho"
+    const status = error.response?.status;
+    console.error('[Gemini] API Error:', status, error.message);
+
+    if (status === 429) {
+      apiQuotaExceeded = true;
+      setTimeout(() => { apiQuotaExceeded = false; }, 60000);
+    }
+
     return generateFallbackResponse(prompt);
   }
 }

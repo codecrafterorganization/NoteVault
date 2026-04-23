@@ -36,7 +36,7 @@ const Notebooks = () => {
 
   return (
     <div className="relative w-full h-screen bg-[#0A0D14] overflow-hidden text-slate-100 flex">
-      <SidebarPreview />
+      <SidebarPreview onSignIn={() => {}} />
       
       <main className="flex-1 flex flex-col h-full overflow-hidden p-8 gap-8">
         <header className="flex flex-col gap-2 shrink-0">
@@ -101,3 +101,4 @@ const Notebooks = () => {
 };
 
 export default Notebooks;
+

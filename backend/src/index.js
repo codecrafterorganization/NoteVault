@@ -27,10 +27,112 @@ const searchRouter = require('./routes/search');
 const graphRouter = require('./routes/graph');
 const sandboxRouter = require('./routes/sandbox');
 const testRouter = require('./routes/test');
+const battleRouter = require('./routes/battle');
 const errorHandler = require('./middleware/errorHandler');
 
+const http = require('http');
+const { Server: SocketIOServer } = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
+
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// ─── Socket.io Battle Mode ────────────────────────────────────────────────────
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: true,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// In-memory state for Battle Mode
+const onlineUsers = {}; // socketId → { username, socketId }
+const battleRooms = {}; // roomId → { players: [socketId, socketId], scores: {}, questions: [] }
+
+io.on('connection', (socket) => {
+  console.log('[BattleMode] Client connected:', socket.id);
+
+  // User joins lobby
+  socket.on('join_lobby', ({ username }) => {
+    const safeUsername = (username || 'Player').slice(0, 20);
+    onlineUsers[socket.id] = { username: safeUsername, socketId: socket.id };
+    console.log(`[BattleMode] ${safeUsername} joined lobby`);
+    io.emit('lobby_update', Object.values(onlineUsers));
+  });
+
+  // Send challenge to another player
+  socket.on('send_challenge', ({ targetSocketId }) => {
+    const challenger = onlineUsers[socket.id];
+    if (!challenger || !onlineUsers[targetSocketId]) return;
+    io.to(targetSocketId).emit('incoming_challenge', {
+      challengerSocketId: socket.id,
+      challengerUsername: challenger.username,
+    });
+    console.log(`[BattleMode] ${challenger.username} challenged ${onlineUsers[targetSocketId].username}`);
+  });
+
+  // Decline a challenge
+  socket.on('decline_challenge', ({ challengerSocketId }) => {
+    const decliner = onlineUsers[socket.id];
+    io.to(challengerSocketId).emit('challenge_declined', {
+      declinedBy: decliner?.username || 'Opponent',
+    });
+  });
+
+  // Accept challenge → create room and start battle
+  socket.on('accept_challenge', async ({ challengerSocketId, questions }) => {
+    const roomId = uuidv4();
+    battleRooms[roomId] = {
+      players: [challengerSocketId, socket.id],
+      scores: { [challengerSocketId]: 0, [socket.id]: 0 },
+      questions,
+      answeredCount: { [challengerSocketId]: 0, [socket.id]: 0 },
+    };
+
+    socket.join(roomId);
+    const challengerSocket = io.sockets.sockets.get(challengerSocketId);
+    if (challengerSocket) challengerSocket.join(roomId);
+
+    io.to(roomId).emit('battle_start', { roomId, questions });
+    console.log(`[BattleMode] Battle started in room ${roomId}`);
+  });
+
+  // Score update when a player answers correctly
+  socket.on('update_score', ({ roomId, score }) => {
+    if (!battleRooms[roomId]) return;
+    battleRooms[roomId].scores[socket.id] = score;
+    io.to(roomId).emit('score_update', { scores: battleRooms[roomId].scores });
+  });
+
+  // Battle ended by one player
+  socket.on('battle_end', ({ roomId }) => {
+    if (!battleRooms[roomId]) return;
+    const room = battleRooms[roomId];
+    const scores = room.scores;
+    const [p1, p2] = room.players;
+    let winner = null;
+    if (scores[p1] > scores[p2]) winner = onlineUsers[p1]?.username;
+    else if (scores[p2] > scores[p1]) winner = onlineUsers[p2]?.username;
+    else winner = 'Draw';
+
+    io.to(roomId).emit('battle_result', { scores, winner });
+    console.log(`[BattleMode] Battle in room ${roomId} ended. Winner: ${winner}`);
+    delete battleRooms[roomId];
+  });
+
+  // Cleanup on disconnect
+  socket.on('disconnect', () => {
+    const user = onlineUsers[socket.id];
+    if (user) {
+      console.log(`[BattleMode] ${user.username} disconnected`);
+      delete onlineUsers[socket.id];
+      io.emit('lobby_update', Object.values(onlineUsers));
+    }
+  });
+});
+
 
 // ─── Security & Parsing ───────────────────────────────────────────────────────
 app.use(helmet());
@@ -105,6 +207,7 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/graph', graphRouter);
 app.use('/api/sandbox', sandboxRouter);
+app.use('/api/battle', battleRouter);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -115,9 +218,10 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`\n🚀 NoteVault Server running on http://localhost:${PORT}`);
   console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`   Socket.io  : Battle Mode enabled ⚔️`);
   console.log(`   Health check: http://localhost:${PORT}/health\n`);
 });
 
