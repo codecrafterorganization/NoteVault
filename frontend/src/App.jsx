@@ -4,6 +4,7 @@ import Background from './components/Background';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import StudySpace from './pages/StudySpace';
+import TestMode from './pages/TestMode';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/study/:noteId" element={<StudySpace />} />
+        <Route path="/test/:noteId" element={<TestMode />} />
       </Routes>
     </div>
   );

@@ -40,10 +40,16 @@ const StudySpace = () => {
         <Link to="/dashboard" className="p-2 hover:bg-white/[0.05] rounded-xl transition text-slate-400 hover:text-white border border-transparent hover:border-slate-700/50">
           <ChevronLeft size={20} />
         </Link>
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex items-center justify-between">
            <h1 className="text-lg font-semibold tracking-tight text-white flex items-center gap-3">
               Study Space <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] text-slate-400 border border-slate-700">ID: {noteId || 'local_file'}</span>
            </h1>
+           <Link 
+              to={`/test/${noteId}`}
+              className="flex items-center gap-2 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
+            >
+              <Brain size={14} /> Advanced Test Mode
+           </Link>
         </div>
       </header>
 

@@ -251,7 +251,18 @@ const Dashboard = () => {
                              </div>
                              <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">{note.type}</span>
                           </div>
-                        <h3 className="text-sm font-semibold text-slate-200 mb-2 group-hover:text-white transition-colors">{note.title}</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{note.title}</h3>
+                          {!isMergeMode && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); navigate(`/test/${note.id}`); }}
+                              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all border border-transparent hover:border-white/10 group/btn"
+                              title="Start Advanced Test"
+                            >
+                              <Brain size={14} className="group-hover/btn:scale-110 transition-transform" />
+                            </button>
+                          )}
+                        </div>
                         <div className="flex items-center text-xs text-slate-500">
                           <Clock size={12} className="mr-1" />
                           Edited recently
