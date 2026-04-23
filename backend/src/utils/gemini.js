@@ -12,10 +12,9 @@ if (!apiKey) {
 // Default model configuration
 const DEFAULT_MODEL = 'gemini-flash-latest';
 
-// Track API failures for fallback mode
-let apiQuotaExceeded = false;
+// Track API failures
 let apiCallCount = 0;
-const MAX_API_CALLS = 1000; // High limit for demo
+const MAX_API_CALLS = 1000;
 
 /**
  * Generate content using Gemini AI
@@ -24,41 +23,43 @@ const MAX_API_CALLS = 1000; // High limit for demo
  * @returns {Promise<string>} - The generated response text
  */
 async function generateContent(prompt, options = {}) {
-  if (!apiKey) {
-    throw new Error('Gemini API not initialized. Please set GEMINI_API_KEY in .env');
-  }
-
-  if (apiQuotaExceeded) {
-    console.log('[Gemini] Using fallback mode (API quota exceeded)');
+  // Always get the latest key from env in case it was updated
+  const currentApiKey = process.env.GEMINI_API_KEY;
+  
+  if (!currentApiKey) {
+    console.error('[Gemini] ERROR: GEMINI_API_KEY not found in environment.');
     return generateFallbackResponse(prompt);
   }
 
   try {
     const modelStr = options.model || DEFAULT_MODEL;
-    console.log('[Gemini] Sending prompt to', modelStr, ':', prompt.substring(0, 100) + '...');
+    console.log(`[Gemini] Attempting ${modelStr} (Key: ${currentApiKey.substring(0, 8)}...)`);
     
     const result = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelStr}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelStr}:generateContent?key=${currentApiKey}`,
       {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: options.temperature ?? 0.7,
           maxOutputTokens: options.maxTokens || 1024,
         }
-      }
+      },
+      { timeout: 15000 } // 15s timeout
     );
 
     const text = result.data.candidates[0].content.parts[0].text;
     apiCallCount++;
-    console.log('[Gemini] Response received ✓ (call #' + apiCallCount + ')');
+    console.log('[Gemini] Success ✓');
     return text;
   } catch (error) {
     const status = error.response?.status;
-    console.error('[Gemini] API Error:', status, error.message);
+    const errorData = error.response?.data?.error || {};
+    console.error('[Gemini] API ERROR:', status, errorData.message || error.message);
 
-    if (status === 429) {
-      apiQuotaExceeded = true;
-      setTimeout(() => { apiQuotaExceeded = false; }, 60000);
+    // If it's a 404, maybe the model name is wrong for this key
+    if (status === 404 && !options.model) {
+      console.log('[Gemini] 404 - Retrying with gemini-pro-latest...');
+      return generateContent(prompt, { ...options, model: 'gemini-pro-latest' });
     }
 
     return generateFallbackResponse(prompt);
@@ -139,7 +140,7 @@ function generateFallbackAnswer(noteContent, question) {
     }
   }
   
-  return `[⚡ Fast Mode] Based on your notes: ${bestMatch.trim()}`;
+  return `Based on your notes: ${bestMatch.trim()}`;
 }
 
 function generateFallbackCheatSheet(noteContent) {
@@ -402,6 +403,42 @@ async function fixCodeSnippet(code, error, language = 'javascript') {
   }
 }
 
+/**
+ * Summarize text
+ */
+async function summarize(text) {
+  const prompt = `Summarize the following notes in 3-4 concise, professional sentences that capture the main essence:\n\n${text.slice(0, 10000)}\n\nSummary:`;
+  return await generateContent(prompt, { temperature: 0.5, maxTokens: 300 });
+}
+
+/**
+ * Extract key points
+ */
+async function extractKeyPoints(text) {
+  const prompt = `Extract 5-7 most important key points from the following notes. Return ONLY a JSON array of strings.\n\nNotes: ${text.slice(0, 10000)}\n\nKey points (JSON array):`;
+  const response = await generateContent(prompt, { temperature: 0.3, maxTokens: 500 });
+  try {
+    const match = response.match(/\[[\s\S]*\]/);
+    return match ? JSON.parse(match[0]) : JSON.parse(response);
+  } catch (e) {
+    return text.split('\n').filter(l => l.trim().length > 30).slice(0, 5);
+  }
+}
+
+/**
+ * Generate tags
+ */
+async function generateTags(text) {
+  const prompt = `Generate 4-6 relevant one-word lowercase tags for the following notes. Return ONLY a JSON array of strings.\n\nNotes: ${text.slice(0, 5000)}\n\nTags (JSON array):`;
+  const response = await generateContent(prompt, { temperature: 0.3, maxTokens: 100 });
+  try {
+    const match = response.match(/\[[\s\S]*\]/);
+    return match ? JSON.parse(match[0]) : JSON.parse(response);
+  } catch (e) {
+    return ['notes', 'study', 'ai'];
+  }
+}
+
 module.exports = {
   generateContent,
   askQuestion,
@@ -409,5 +446,8 @@ module.exports = {
   generateQuiz,
   generateCheatsheet,
   generateMasterGuide,
-  fixCodeSnippet
+  fixCodeSnippet,
+  summarize,
+  extractKeyPoints,
+  generateTags
 };

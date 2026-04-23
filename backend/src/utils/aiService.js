@@ -44,6 +44,18 @@ async function explainText(selectedText, noteContent = '') {
   return await gemini.explainText(selectedText, noteContent);
 }
 
+async function summarize(text) {
+  return await gemini.summarize(text);
+}
+
+async function extractKeyPoints(text) {
+  return await gemini.extractKeyPoints(text);
+}
+
+async function generateTags(text) {
+  return await gemini.generateTags(text);
+}
+
 async function generateKnowledgeGraph(noteContent) {
   const safeContent = noteContent ? noteContent.slice(0, 3000) : '';
   const prompt = `You are a data extraction AI. Build a knowledge graph from the given text. 
@@ -87,6 +99,9 @@ module.exports = {
   fixCodeSnippet,
   explainText,
   generateKnowledgeGraph,
+  summarize,
+  extractKeyPoints,
+  generateTags,
   getLastProvider,
   isNvidiaConfigured,
   isOllamaAvailable
