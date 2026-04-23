@@ -36,7 +36,7 @@ async function generateContent(prompt, options = {}) {
   };
 
   // Ask Groq to return JSON if requested
-  if (options.json) {
+  if (options.json !== false) { // Default to JSON mode for stability if prompt says so
     body.response_format = { type: 'json_object' };
   }
 

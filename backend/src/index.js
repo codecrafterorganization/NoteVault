@@ -1,5 +1,21 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const dotenv = require('dotenv');
+const fs = require('fs');
+
+const envPaths = [
+  path.join(__dirname, '../.env'),
+  path.join(__dirname, '../../server/.env'),
+  path.join(process.cwd(), '.env'),
+  path.join(process.cwd(), 'server/.env')
+];
+
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    console.log(`[Config] Loading environment from: ${envPath}`);
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
 
 // FIX NODE 18+ IPv6 DNS HANG ISSUES
 // This single line completely eliminates the 10-15s delay on Google/Nvidia APIs 

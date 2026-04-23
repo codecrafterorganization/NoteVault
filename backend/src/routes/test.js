@@ -54,7 +54,8 @@ router.post('/generate', async (req, res) => {
         note_id: noteId,
         difficulty,
         status: 'in_progress',
-        total_questions: questions.length
+        total_questions: questions.length,
+        questions_json: JSON.stringify(questions) // Store for persistence across restarts
       }]);
 
       if (sessionError) console.warn('[TestMode] Could not save session to DB:', sessionError.message);
@@ -104,8 +105,29 @@ router.post('/ocr', upload.single('image'), async (req, res) => {
 router.post('/submit', async (req, res) => {
   const { sessionId, answers } = req.body; // answers: { [qId]: answer }
 
-  const fullQuestions = global.activeSessions?.[sessionId];
-  if (!fullQuestions) return res.status(404).json({ success: false, error: 'Session expired or not found.' });
+  // Try memory first, fallback to DB
+  let fullQuestions = global.activeSessions?.[sessionId];
+  
+  if (!fullQuestions) {
+    console.log('[TestMode] Session not in memory, fetching from DB...');
+    const { data: session, error } = await supabase
+      .from('test_sessions')
+      .select('questions_json')
+      .eq('id', sessionId)
+      .single();
+      
+    if (!error && session?.questions_json) {
+      try {
+        fullQuestions = typeof session.questions_json === 'string' 
+          ? JSON.parse(session.questions_json) 
+          : session.questions_json;
+      } catch (e) {
+        console.error('[TestMode] Failed to parse questions from DB');
+      }
+    }
+  }
+
+  if (!fullQuestions) return res.status(404).json({ success: false, error: 'Session expired or not found. Please try generating a new test.' });
 
   try {
     let totalScore = 0;

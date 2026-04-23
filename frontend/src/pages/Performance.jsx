@@ -113,6 +113,42 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Performance = () => {
   const navigate = useNavigate();
+  const [sessions, setSessions] = useState([]);
+  const [performanceData, setPerformanceData] = useState(MOCK_PERFORMANCE_DATA);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/test/sessions');
+        const data = await res.json();
+        if (data.success && data.sessions && data.sessions.length > 0) {
+          setSessions(data.sessions);
+          
+          // Generate performance graph data from real sessions
+          const graphData = data.sessions
+            .slice(0, 10)
+            .reverse()
+            .map(s => ({
+              date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+              score: s.score || 0,
+              time: 30 // Approximate
+            }));
+          setPerformanceData(graphData);
+        } else {
+          // Fallback to mocks if no real data
+          setSessions(MOCK_SESSIONS);
+        }
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err);
+        setSessions(MOCK_SESSIONS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, []);
 
   return (
     <div className="relative w-full h-screen bg-[#050505] overflow-hidden text-slate-100 flex font-sans">
@@ -138,6 +174,11 @@ const Performance = () => {
           </div>
 
           <div className="flex items-center gap-3">
+             {sessions.length > 0 && sessions[0].id && !String(sessions[0].id).includes('mock') && (
+               <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                 Live Feed Active
+               </div>
+             )}
              <button className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 transition-colors">
                 <Download size={14} />
                 Export Data
@@ -145,7 +186,7 @@ const Performance = () => {
              <div className="h-8 w-px bg-white/10" />
              <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2">
                 <Zap size={14} className="text-emerald-400" />
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Efficiency: 98.4%</span>
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Efficiency: {sessions.length > 0 ? (sessions.reduce((a, b) => a + (b.score || 0), 0) / sessions.length).toFixed(1) : '98.4'}%</span>
              </div>
           </div>
         </header>
@@ -229,7 +270,7 @@ const Performance = () => {
 
                  <div className="flex-1 w-full min-h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={MOCK_PERFORMANCE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                       <AreaChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <defs>
                              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
