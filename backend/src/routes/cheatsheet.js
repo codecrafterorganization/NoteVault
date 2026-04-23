@@ -39,24 +39,20 @@ router.post('/generate', [
       return res.json({ success: false, error: 'Note content too short. Please upload a note with more content.' });
     }
     
-    // Check if cheatsheet already exists for this note
-    const { data: existingCheatsheet } = await supabase
-      .from('cheatsheets')
-      .select('content')
-      .eq('note_id', noteId)
-      .single();
-
-    if (existingCheatsheet && existingCheatsheet.content) {
-      console.log('[cheatsheet/generate] Returning cached cheatsheet.');
+    // FORCE BYPASS CACHE FOR DEBUGGING
+    console.log('[cheatsheet/generate] Bypassing cache to ensure fresh generation.');
+    await supabase.from('cheatsheets').delete().eq('note_id', noteId);
+    
+    const cheatsheet = await generateCheatsheet(noteContent);
+    
+    if (!cheatsheet || cheatsheet.length < 50) {
+      console.error('[cheatsheet/generate] AI returned empty or very short response.');
       return res.json({ 
-        success: true, 
-        noteId, 
-        cheatsheet: existingCheatsheet.content, 
-        provider: 'Cache (Supabase)' 
+        success: false, 
+        error: 'AI returned an empty response. This might be a temporary API glitch.',
+        debug: { length: cheatsheet?.length, noteLength: noteContent.length }
       });
     }
-
-    const cheatsheet = await generateCheatsheet(noteContent);
     
     // Save to database
     const { error: insertError } = await supabase.from('cheatsheets').insert([{

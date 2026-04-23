@@ -301,40 +301,32 @@ async function generateCheatsheet(noteContent) {
     return 'Error: No note content available to generate cheat sheet.';
   }
   
-  // Trim content to manageable size
-  const trimmedContent = noteContent.slice(0, 4000);
+  const trimmedContent = noteContent.slice(0, 15000);
   
-  const prompt = `Create a HIGH-QUALITY cheat sheet from the notes.
-
-Rules:
-- DO NOT copy the text verbatim
-- SUMMARIZE the content
-- Use bullet points
-- Use headings
-- Highlight important concepts
-- Keep it short and structured
-- Make it useful for revision
+  const prompt = `You are an elite academic tutor. Create a COMPREHENSIVE, DEEP-DIVE cheat sheet from the provided notes.
+DO NOT provide a short summary. Provide a full study guide.
 
 Notes:
 ${trimmedContent}
 
-Output format:
+Rules:
+- Exhaustively cover all key terms, formulas, and concepts
+- Use clear Markdown headings (##) and bold text
+- If the notes are in Hindi or Hinglish, keep the explanation in a similar friendly mix
+- Ensure the output is at least 500-800 words long if the notes allow
 
-## Title
-Brief title of the topic
+Structure:
+## Executive Overview
+## Deep Dive: Core Concepts
+## Detailed Key Points
+## Essential Summary & Final Review`;
 
-## Key Points
-- Summarized bullet points from notes
-
-## Important Concepts
-- Concept: Brief explanation
-
-## Short Summary
-2-3 sentence overview
-
-Create the cheat sheet now:`;
-
-  return await generateContent(prompt, { temperature: 0.7, maxTokens: 500 });
+  console.log('[Gemini] Generating High-Detail Cheat Sheet...');
+  return await generateContent(prompt, { 
+    model: 'gemini-pro-latest',
+    temperature: 0.8, 
+    maxTokens: 2048 
+  });
 }
 
 /**
