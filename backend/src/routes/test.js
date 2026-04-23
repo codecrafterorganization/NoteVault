@@ -142,4 +142,32 @@ router.post('/submit', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/test/sessions
+ * Retrieves all test sessions for performance tracking
+ */
+router.get('/sessions', async (req, res) => {
+  try {
+    const { data: sessions, error } = await supabase
+      .from('test_sessions')
+      .select(`
+        *,
+        notes ( title )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const mapped = sessions.map(s => ({
+      ...s,
+      note_title: s.notes?.title
+    }));
+
+    res.json({ success: true, sessions: mapped });
+  } catch (err) {
+    console.error('[TestMode] Sessions Fetch Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

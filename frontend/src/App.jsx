@@ -5,6 +5,7 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import StudySpace from './pages/StudySpace';
 import TestMode from './pages/TestMode';
+import Performance from './pages/Performance';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/study/:noteId" element={<StudySpace />} />
         <Route path="/test/:noteId" element={<TestMode />} />
+        <Route path="/performance" element={<Performance />} />
       </Routes>
     </div>
   );

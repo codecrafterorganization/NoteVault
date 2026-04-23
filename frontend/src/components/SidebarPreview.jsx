@@ -1,12 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { Home, BookOpen, Search, Folder, Hash, Settings, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Home, BookOpen, Search, Folder, Hash, Settings, User, Brain, Activity } from 'lucide-react';
 import gsap from 'gsap';
 
 const SidebarPreview = () => {
   const brandRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleNavClick = (label) => {
-    if (label !== 'Dashboard') {
+    if (label === 'Dashboard') navigate('/dashboard');
+    else if (label === 'Performance') navigate('/performance');
+    else if (label === 'Test Mode') navigate('/test/general');
+    else {
       alert(`The ${label} feature is planned for the post-hackathon release! 🚀`);
     }
   };
@@ -130,6 +134,18 @@ const SidebarPreview = () => {
           <div onClick={() => handleNavClick('Tags & Topics')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
             <Hash size={16} className="group-hover:text-slate-300" />
             <span className="text-xs font-medium">Tags & Topics</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2 mb-2">Assessment</span>
+          <div onClick={() => handleNavClick('Test Mode')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
+            <Brain size={16} className="group-hover:text-slate-300" />
+            <span className="text-xs font-medium">Test Mode</span>
+          </div>
+          <div onClick={() => handleNavClick('Performance')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
+            <Activity size={16} className="group-hover:text-slate-300" />
+            <span className="text-xs font-medium">Performance</span>
           </div>
           <div onClick={() => handleNavClick('Settings')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/40 hover:text-white transition-all cursor-pointer group">
             <Settings size={16} className="group-hover:text-slate-300" />

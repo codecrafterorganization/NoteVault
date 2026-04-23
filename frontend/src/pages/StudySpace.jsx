@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Brain } from 'lucide-react';
 import gsap from 'gsap';
 import NoteViewer from '../components/NoteViewer';
 import ChatPanel from '../components/ChatPanel';

@@ -197,9 +197,9 @@ const Dashboard = () => {
               ) : (
                 <button 
                   onClick={() => setIsMergeMode(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-white/10 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-500 rounded-xl text-sm font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-white text-black rounded-xl text-sm font-medium transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                 >
-                  🧠 Group Brain
+                  <Brain size={16} /> Group Brain
                 </button>
               )}
 
@@ -274,6 +274,38 @@ const Dashboard = () => {
                 </div>
               </div>
               
+              {/* Learning Progress Widget */}
+              <div className="cinematic-glass p-8 rounded-3xl flex flex-col gap-6 premium-surface">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-semibold text-white">Mastery Progress</h2>
+                    <p className="text-xs text-slate-400">Your average test performance across all subjects.</p>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/performance')}
+                    className="text-xs font-semibold text-white/60 hover:text-white flex items-center gap-1 transition-all"
+                  >
+                    View History <ChevronRight size={14} />
+                  </button>
+                </div>
+
+                <div className="flex items-end gap-2 h-24 mt-4">
+                  {[45, 62, 58, 85, 72, 90, 88].map((v, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                       <div 
+                         className="w-full bg-white/10 rounded-t-lg transition-all hover:bg-white/30 cursor-pointer relative group"
+                         style={{ height: `${v}%` }}
+                       >
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            {v}%
+                          </div>
+                       </div>
+                       <span className="text-[9px] text-slate-500 uppercase font-bold">Day {i+1}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* To-Do List Area */}
               <ToDoList />
             </div>

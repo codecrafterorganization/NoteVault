@@ -18,6 +18,9 @@ const TestMode = () => {
   const [timeLeft, setTimeLeft] = useState(3600); // 60 mins for advanced
   const [results, setResults] = useState(null);
   
+  const [allNotes, setAllNotes] = useState([]);
+  const [selectedNoteId, setSelectedNoteId] = useState(noteId !== 'general' ? noteId : null);
+  
   const containerRef = useRef(null);
 
   // Level Selection Info
@@ -27,13 +30,26 @@ const TestMode = () => {
     { name: 'Advanced', desc: '12 MCQs + 8 Long Answers • Critical analysis', time: '60 minutes' }
   ];
 
+  useEffect(() => {
+    if (noteId === 'general') {
+      fetch('http://localhost:5000/api/notes')
+        .then(res => res.json())
+        .then(data => {
+          if (data.notes) setAllNotes(data.notes);
+        });
+    }
+  }, [noteId]);
+
   const startTest = async () => {
-    setStep('evaluating'); // Use evaluating as a loading state for generation
+    const targetId = selectedNoteId || noteId;
+    if (!targetId || targetId === 'general') return alert('Please select a note to test on.');
+
+    setStep('evaluating');
     try {
       const res = await fetch('http://localhost:5000/api/test/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ noteId, difficulty })
+        body: JSON.stringify({ noteId: targetId, difficulty })
       });
       const data = await res.json();
       if (data.success) {
@@ -130,9 +146,27 @@ const TestMode = () => {
           ))}
         </div>
 
+        {noteId === 'general' && (
+          <div className="w-full flex flex-col gap-4 mt-4">
+             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest text-center">Select Note for Exam</h3>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {allNotes.map(n => (
+                  <div 
+                    key={n.id}
+                    onClick={() => setSelectedNoteId(n.id)}
+                    className={`p-3 rounded-xl border text-[11px] font-medium transition-all cursor-pointer truncate ${selectedNoteId === n.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10'}`}
+                  >
+                    {n.title}
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+
         <button 
           onClick={startTest}
-          className="mt-8 px-12 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-all shadow-xl shadow-white/10"
+          disabled={noteId === 'general' && !selectedNoteId}
+          className="mt-8 px-12 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-all shadow-xl shadow-white/10 disabled:opacity-50"
         >
           Initialize Exam
         </button>
