@@ -4,7 +4,6 @@ import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload, Brain, LogO
 import gsap from 'gsap';
 import SidebarPreview from '../components/SidebarPreview';
 import AuthPanel from '../components/AuthPanel';
-import KnowledgeGraph from '../components/KnowledgeGraph';
 import ToDoList from '../components/ToDoList';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,13 +34,6 @@ const Dashboard = () => {
       .catch(err => console.error("Could not fetch sessions:", err));
   };
 
-  const dummyNotes = [
-    { id: 'dummy-biology', title: 'Biology: Cellular Respiration', type: 'Study Guide', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: 'dummy-thermo', title: 'Advanced Thermodynamics', type: 'Lecture Notes', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: 'dummy-chem', title: 'Organic Chemistry II', type: 'Summary', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-    { id: 'dummy-quantum', title: 'Quantum Mechanics Basics', type: 'Formula Sheet', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
-  ];
-
   const fetchNotes = () => {
     fetch('http://localhost:5000/api/notes')
       .then(res => res.json())
@@ -56,12 +48,12 @@ const Dashboard = () => {
           }));
           setNotes(mapped.slice(0, 4));
         } else {
-          setNotes(dummyNotes);
+          setNotes([]);
         }
       })
       .catch(err => {
         console.error("Could not fetch notes:", err);
-        setNotes(dummyNotes);
+        setNotes([]);
       });
   };
 
@@ -278,9 +270,9 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-2 gap-4 z-10 overflow-y-auto no-scrollbar pb-4 text-left">
                   {notes.length === 0 ? (
-                    <div className="col-span-2 text-slate-500 text-sm flex items-center justify-center p-6 border border-dashed border-slate-700/50 rounded-xl">
-                       <Clock size={16} className="mr-2" />
-                       Loading your notes from the vault...
+                    <div className="col-span-2 text-slate-500 text-sm flex flex-col items-center justify-center p-8 border border-dashed border-slate-700/50 rounded-xl gap-3">
+                       <BookOpen size={24} className="opacity-40" />
+                       <p className="text-center">No notes yet. Upload your first note to get started!</p>
                     </div>
                   ) : (
                     notes.map((note) => {
@@ -362,38 +354,8 @@ const Dashboard = () => {
 
             </div>
 
-            {/* Side Area - Knowledge Graph */}
+            {/* Side Area - To-Do List */}
             <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-              <div className="cinematic-glass p-4 rounded-3xl flex flex-col relative overflow-hidden premium-surface min-h-[300px]">
-                 <div className="flex items-center gap-2 mb-2 z-10 p-2">
-                    <Book size={18} className="text-slate-400" />
-                    <h2 className="text-sm font-semibold text-white tracking-wide">Concept Map</h2>
-                 </div>
-                 
-                 <div className="flex-1 w-full h-full z-10 relative">
-                    <KnowledgeGraph 
-                      graphData={{
-                        nodes: [
-                          { id: 'photosynthesis', label: 'Photosynthesis' },
-                          { id: 'light_reactions', label: 'Light Reactions' },
-                          { id: 'dark_reactions', label: 'Dark Reactions' },
-                          { id: 'h2o', label: 'H2O' },
-                          { id: 'co2', label: 'CO2' },
-                          { id: 'glucose', label: 'Glucose' }
-                        ],
-                        edges: [
-                          { from: 'photosynthesis', to: 'light_reactions', label: 'contains' },
-                          { from: 'photosynthesis', to: 'dark_reactions', label: 'contains' },
-                          { from: 'light_reactions', to: 'h2o', label: 'requires' },
-                          { from: 'dark_reactions', to: 'co2', label: 'requires' },
-                          { from: 'dark_reactions', to: 'glucose', label: 'produces' }
-                        ]
-                      }}
-                    />
-                 </div>
-              </div>
-
-              {/* To-Do List Area (Moved here for balance) */}
               <ToDoList />
             </div>
 
