@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload } from 'lucide-react';
+import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload, Brain } from 'lucide-react';
 import gsap from 'gsap';
 import SidebarPreview from '../components/SidebarPreview';
 import AuthDrawer from '../components/AuthDrawer';
