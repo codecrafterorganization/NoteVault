@@ -35,8 +35,9 @@ async function generateContent(prompt, options = {}) {
     temperature,
   };
 
-  // Ask Groq to return JSON if requested
-  if (options.json !== false) { // Default to JSON mode for stability if prompt says so
+  // Only enable JSON mode when explicitly requested
+  // NOTE: json_object mode requires the word 'json' in the prompt
+  if (options.json === true) {
     body.response_format = { type: 'json_object' };
   }
 
