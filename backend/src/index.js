@@ -26,6 +26,7 @@ const uploadRouter = require('./routes/upload');
 const searchRouter = require('./routes/search');
 const graphRouter = require('./routes/graph');
 const sandboxRouter = require('./routes/sandbox');
+const testRouter = require('./routes/test');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
