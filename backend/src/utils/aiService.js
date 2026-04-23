@@ -56,31 +56,6 @@ async function generateTags(text) {
   return await gemini.generateTags(text);
 }
 
-async function generateKnowledgeGraph(noteContent) {
-  const safeContent = noteContent ? noteContent.slice(0, 3000) : '';
-  const prompt = `You are a data extraction AI. Build a knowledge graph from the given text. 
-Return ONLY valid JSON. Focus on core entities (max 10-15) and their relationships.
-Format:
-{
-  "nodes": [ {"id": "concept1", "label": "Concept 1"}, {"id": "concept2", "label": "Concept 2"} ],
-  "edges": [ {"from": "concept1", "to": "concept2", "label": "causes"} ]
-}
-
-Extract a knowledge graph from these notes:
-${safeContent}
-
-Only return JSON.`;
-
-  const response = await gemini.generateContent(prompt, { maxTokens: 1024 });
-  try {
-    const match = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-    const jsonStr = match ? match[1] : response;
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.warn('[generateKnowledgeGraph] Failed to parse JSON:', e.message);
-    return { nodes: [{ id: 'error', label: 'Processing Error' }], edges: [] };
-  }
-}
 
 function isNvidiaConfigured() {
   return true;

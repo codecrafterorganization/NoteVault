@@ -90,12 +90,6 @@ const StudySpace = () => {
               Cheat Sheet
             </button>
             <button 
-              onClick={() => setActiveTab('graph')}
-              className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'graph' ? 'bg-white/10 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
-            >
-              Mind Map
-            </button>
-            <button 
               onClick={() => setActiveTab('sandbox')}
               className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all ${activeTab === 'sandbox' ? 'bg-slate-700/40 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
             >
@@ -107,7 +101,6 @@ const StudySpace = () => {
             {activeTab === 'chat' && <ChatPanel noteId={noteId} highlightedText={selectedText} />}
             {activeTab === 'quiz' && <QuizPanel noteId={noteId} />}
             {activeTab === 'cheatsheet' && <CheatsheetPanel noteId={noteId} />}
-            {activeTab === 'graph' && <GraphPanel noteId={noteId} />}
             {activeTab === 'sandbox' && <SandboxPanel highlightedText={selectedText} />}
           </div>
         </div>

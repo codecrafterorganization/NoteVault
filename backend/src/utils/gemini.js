@@ -335,40 +335,40 @@ Generate the ${difficulty} quiz now:`;
  * @returns {Promise<string>} - The formatted cheat sheet
  */
 async function generateCheatsheet(noteContent) {
-  // DEBUG LOGS
-  console.log('[generateCheatsheet] Note Length:', noteContent?.length);
-  console.log('[generateCheatsheet] Preview:', noteContent?.substring(0, 200));
-  
-  if (!noteContent || noteContent.length < 10) {
-    console.error('[generateCheatsheet] ERROR: Note content is empty or too short!');
-    return 'Error: No note content available to generate cheat sheet.';
-  }
-  
   const trimmedContent = noteContent.slice(0, 15000);
   
-  const prompt = `You are an elite academic tutor. Create a COMPREHENSIVE, DEEP-DIVE cheat sheet from the provided notes.
-DO NOT provide a short summary. Provide a full study guide.
+  const prompt = `You are a world-class academic tutor and summary expert. Your task is to generate a HIGH-FIDELITY, COMPREHENSIVE study guide/cheat sheet from the provided notes.
 
-Notes:
+STRUCTURE YOUR OUTPUT IN MARKDOWN:
+# [Main Topic Title]
+
+## 📝 Executive Summary
+(A concise but information-dense overview of the core subject)
+
+## 💡 Core Concepts & Frameworks
+(Explain the foundational concepts, theories, and key definitions in depth)
+
+## 🔢 Quantitative Data & Key References
+(List all formulas, dates, names, or statistics found in the notes)
+
+## 🎯 Analytical Breakdown
+(A detailed, logical flow of the main arguments or processes described)
+
+## 🚀 Memory Anchors
+(Key takeaways and mnemonic tips to help the student remember)
+
+## 📜 Synthesis
+(A final closing paragraph that ties all the information together)
+
+NOTES TO SUMMARIZE:
 ${trimmedContent}
 
-Rules:
-- Exhaustively cover all key terms, formulas, and concepts
-- Use clear Markdown headings (##) and bold text
-- If the notes are in Hindi or Hinglish, keep the explanation in a similar friendly mix
-- Ensure the output is at least 500-800 words long if the notes allow
+Generate the ultimate study guide now:`;
 
-Structure:
-## Executive Overview
-## Deep Dive: Core Concepts
-## Detailed Key Points
-## Essential Summary & Final Review`;
-
-  console.log('[Gemini] Generating High-Detail Cheat Sheet...');
+  console.log('[Gemini] Generating Master-Level Study Guide...');
   return await generateContent(prompt, { 
-    model: 'gemini-pro-latest',
-    temperature: 0.8, 
-    maxTokens: 2048 
+    temperature: 0.6, 
+    maxTokens: 3000 
   });
 }
 
