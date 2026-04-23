@@ -98,7 +98,6 @@ module.exports = {
   generateMasterGuide,
   fixCodeSnippet,
   explainText,
-  generateKnowledgeGraph,
   summarize,
   extractKeyPoints,
   generateTags,

@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, BookOpen, Search, Settings, User,
   Brain, Activity, Swords, Upload,
-  FileText, Map, Zap, LogIn, LogOut, X
+  FileText, Map, Zap, LogIn, LogOut, X,
+  WifiOff, Cpu
 } from 'lucide-react';
 import gsap from 'gsap';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +29,7 @@ const NAV_GROUPS = [
     items: [
       { id: 'study', label: 'Study Buddy', icon: Zap, route: null, desc: 'Chat with your notes', action: 'study' },
       { id: 'cheatsheet', label: 'Cheat Sheets', icon: FileText, route: null, desc: 'AI-generated summaries', action: 'cheatsheet' },
-      { id: 'graph', label: 'Concept Maps', icon: Map, route: null, desc: 'Visual knowledge graphs', action: 'graph' },
+      { id: 'offline', label: 'Offline AI', icon: Cpu, route: '/offline-ai', desc: 'Study without internet' },
     ],
   },
   {

@@ -9,6 +9,7 @@ import Performance from './pages/Performance';
 import Notebooks from './pages/Notebooks';
 import Search from './pages/Search';
 import BattleMode from './pages/BattleMode';
+import OfflineAI from './pages/OfflineAI';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/notebooks" element={<Notebooks />} />
         <Route path="/search" element={<Search />} />
         <Route path="/battle" element={<BattleMode />} />
+        <Route path="/offline-ai" element={<OfflineAI />} />
       </Routes>
     </div>
   );

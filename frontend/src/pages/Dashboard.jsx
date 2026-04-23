@@ -22,6 +22,18 @@ const Dashboard = () => {
   const [isMergeMode, setIsMergeMode] = useState(false);
   const [selectedNotes, setSelectedNotes] = useState([]);
   const [isMerging, setIsMerging] = useState(false);
+  const [sessions, setSessions] = useState([]);
+
+  const fetchPerformance = () => {
+    fetch('http://localhost:5000/api/test/sessions')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSessions(data.sessions.slice(0, 7));
+        }
+      })
+      .catch(err => console.error("Could not fetch sessions:", err));
+  };
 
   const dummyNotes = [
     { id: 'dummy-biology', title: 'Biology: Cellular Respiration', type: 'Study Guide', color: 'bg-slate-800 text-slate-300', createdAt: new Date().toISOString() },
@@ -55,6 +67,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchNotes();
+    fetchPerformance();
   }, []);
 
   const handleUpload = async (e) => {
@@ -157,11 +170,11 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-screen bg-transparent overflow-hidden text-slate-100">
-      <div ref={contentRef} className="flex w-full h-screen">
+    <div ref={containerRef} className="relative w-full h-screen bg-transparent overflow-hidden text-slate-100">
+      <div ref={contentRef} className="flex w-full h-full">
         <SidebarPreview onSignIn={() => setIsAuthOpen(true)} onUpload={fetchNotes} />
 
-        <main className="flex-1 flex flex-col h-full bg-transparent relative z-10 p-6 gap-6">
+        <main className="flex-1 flex flex-col h-full bg-transparent relative z-10 p-6 gap-6 overflow-y-auto custom-scrollbar">
           
           <header className="flex items-center justify-between gap-6 h-14">
             <div className="flex-1 flex flex-col items-start px-4">
@@ -250,10 +263,10 @@ const Dashboard = () => {
             </div>
           </header>
 
-          <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden">
+          <div className="flex-1 grid grid-cols-12 gap-6">
             
             {/* Main Content Area */}
-            <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 overflow-hidden">
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
               <div className="cinematic-glass flex-1 p-8 rounded-3xl flex flex-col gap-8 relative overflow-hidden group premium-surface">
                 
                 <div className="flex items-center justify-between z-10">
@@ -328,29 +341,30 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-end gap-2 h-24 mt-4">
-                  {[45, 62, 58, 85, 72, 90, 88].map((v, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                       <div 
-                         className="w-full bg-white/10 rounded-t-lg transition-all hover:bg-white/30 cursor-pointer relative group"
-                         style={{ height: `${v}%` }}
-                       >
-                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            {v}%
-                          </div>
-                       </div>
-                       <span className="text-[9px] text-slate-500 uppercase font-bold">Day {i+1}</span>
-                    </div>
-                  ))}
+                  {(sessions.length > 0 ? sessions : [0, 0, 0, 0, 0, 0, 0]).map((s, i) => {
+                    const val = typeof s === 'number' ? s : s.score;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                         <div 
+                           className="w-full bg-emerald-500 rounded-t-lg transition-all hover:bg-emerald-400 cursor-pointer relative group shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                           style={{ height: `${val || 5}%` }}
+                         >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                              {val}%
+                            </div>
+                         </div>
+                         <span className="text-[9px] text-slate-500 uppercase font-bold">Day {i+1}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* To-Do List Area */}
-              <ToDoList />
             </div>
 
             {/* Side Area - Knowledge Graph */}
-            <div className="col-span-12 lg:col-span-4 flex flex-col">
-              <div className="cinematic-glass flex-1 p-4 rounded-3xl flex flex-col relative overflow-hidden premium-surface min-h-[400px]">
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
+              <div className="cinematic-glass p-4 rounded-3xl flex flex-col relative overflow-hidden premium-surface min-h-[300px]">
                  <div className="flex items-center gap-2 mb-2 z-10 p-2">
                     <Book size={18} className="text-slate-400" />
                     <h2 className="text-sm font-semibold text-white tracking-wide">Concept Map</h2>
@@ -378,6 +392,9 @@ const Dashboard = () => {
                     />
                  </div>
               </div>
+
+              {/* To-Do List Area (Moved here for balance) */}
+              <ToDoList />
             </div>
 
           </div>

@@ -1,68 +1,75 @@
-const gemini = require('../utils/gemini');
-
 /**
- * Service to handle Advanced Test Mode logic
+ * TestService — powered by Groq (LLaMA 3.3 70B)
+ * Handles test generation and answer evaluation.
  */
+
+const groq = require('../utils/groq');
+
 const TestService = {
   /**
-   * Generate questions based on level
+   * Generate questions based on difficulty level
    */
   async generateTestQuestions(noteContent, difficulty) {
-    let mcqCount = 0;
-    let saCount = 0;
-    let laCount = 0;
+    let mcqCount = 0, saCount = 0, laCount = 0;
 
     if (difficulty === 'Beginner') {
       mcqCount = 10;
     } else if (difficulty === 'Intermediate') {
       mcqCount = 8;
-      saCount = 7;
+      saCount  = 7;
     } else {
       mcqCount = 12;
-      laCount = 8;
+      laCount  = 8;
     }
 
-    const prompt = `You are an elite academic examiner. Generate a comprehensive ${difficulty} level test based on the following notes.
-    
-    LEVEL REQUIREMENTS:
-    - ${mcqCount} Multiple Choice Questions (MCQ) - Format: Question, 4 options, Correct Letter (A-D), Explanation.
-    ${saCount > 0 ? `- ${saCount} Short Answer Questions (SA) - 2-3 sentences expected. Provide a "rubric" or key points for each.` : ''}
-    ${laCount > 0 ? `- ${laCount} Long Answer Questions (LA) - Detailed analysis, 200+ words expected. Provide a "rubric" or key points for each.` : ''}
+    const prompt = `You are an elite academic examiner. Generate a ${difficulty}-level test from the study material below.
 
-    IMPORTANT: Respond ONLY with a valid JSON object.
-    Format:
+REQUIREMENTS:
+- ${mcqCount} Multiple Choice Questions (MCQ): include 4 options (A-D), correctAnswer letter, and a brief explanation.
+${saCount > 0 ? `- ${saCount} Short Answer Questions (SHORT_ANSWER): provide a "rubric" with 2-3 key points expected.` : ''}
+${laCount > 0 ? `- ${laCount} Long Answer Questions (LONG_ANSWER): provide a "rubric" with 4-5 key points expected.` : ''}
+
+OUTPUT FORMAT: Return ONLY a valid JSON object — no markdown, no commentary.
+{
+  "questions": [
     {
-      "questions": [
-        {
-          "id": "q1",
-          "type": "MCQ",
-          "text": "...",
-          "options": ["...", "...", "...", "..."],
-          "correctAnswer": "A",
-          "explanation": "..."
-        },
-        {
-          "id": "q11",
-          "type": "SHORT_ANSWER",
-          "text": "...",
-          "rubric": "Key points to cover..."
-        }
-      ]
+      "id": "q1",
+      "type": "MCQ",
+      "text": "...",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "correctAnswer": "A",
+      "explanation": "..."
+    },
+    {
+      "id": "q11",
+      "type": "SHORT_ANSWER",
+      "text": "...",
+      "rubric": "Key points: 1) ... 2) ... 3) ..."
     }
+  ]
+}
 
-    STUDY MATERIAL:
-    ${noteContent.substring(0, 6000)}
+STUDY MATERIAL:
+${(noteContent || 'General knowledge test — create questions on common academic topics.').substring(0, 8000)}
 
-    Generate the ${difficulty} test now:`;
+Generate the ${difficulty} test now (JSON only):`;
 
-    const response = await gemini.generateContent(prompt, { temperature: 0.3, maxTokens: 3000 });
+    const raw = await groq.generateContent(prompt, {
+      maxTokens: 4096,
+      temperature: 0.3,
+    });
+
     try {
-      const match = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = match ? match[1] : response;
-      return JSON.parse(jsonStr).questions;
+      const parsed = groq.parseJSON(raw);
+      if (!parsed.questions || !Array.isArray(parsed.questions)) {
+        throw new Error('No questions array in response');
+      }
+      console.log(`[TestService] Generated ${parsed.questions.length} questions.`);
+      return parsed.questions;
     } catch (e) {
-      console.error('[TestService] Failed to parse generated questions:', e.message);
-      throw new Error('AI failed to generate a structured test. Please try again.');
+      console.error('[TestService] JSON parse failed:', e.message);
+      console.error('[TestService] Raw response (first 500 chars):', raw.substring(0, 500));
+      throw new Error('AI returned an unstructured response. Please try again.');
     }
   },
 
@@ -70,39 +77,40 @@ const TestService = {
    * Evaluate a single subjective answer
    */
   async evaluateAnswer(questionText, rubric, studentAnswer, type) {
-    const prompt = `You are an AI grader. Evaluate the student's answer based on the provided question and rubric.
-    
-    QUESTION: ${questionText}
-    RUBRIC/KEY POINTS: ${rubric}
-    STUDENT ANSWER: ${studentAnswer}
-    TYPE: ${type} (Short Answer or Long Answer)
+    const prompt = `You are an AI grader. Evaluate the student's answer strictly and fairly.
 
-    Return ONLY a JSON object with:
-    {
-      "score": (0-100),
-      "feedback": "2-3 sentences of feedback",
-      "tips": ["Tip 1", "Tip 2", "Tip 3"],
-      "conceptsCovered": ["...", "..."],
-      "conceptsMissing": ["...", "..."]
-    }
+QUESTION: ${questionText}
+RUBRIC: ${rubric}
+STUDENT ANSWER: ${studentAnswer || '(no answer provided)'}
+TYPE: ${type}
 
-    Evaluate objectively:`;
+Return ONLY a JSON object:
+{
+  "score": <integer 0-100>,
+  "feedback": "<2-3 sentences of constructive feedback>",
+  "tips": ["tip1", "tip2", "tip3"],
+  "conceptsCovered": ["..."],
+  "conceptsMissing": ["..."]
+}`;
 
-    const response = await gemini.generateContent(prompt, { temperature: 0.2, maxTokens: 500 });
+    const raw = await groq.generateContent(prompt, {
+      maxTokens: 512,
+      temperature: 0.2,
+      model: groq.FAST_MODEL, // Use fast model for evaluation
+    });
+
     try {
-      const match = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = match ? match[1] : response;
-      return JSON.parse(jsonStr);
+      return groq.parseJSON(raw);
     } catch (e) {
       return {
         score: 50,
-        feedback: "Could not perform deep evaluation, but answer was received.",
-        tips: ["Review the main concept again"],
+        feedback: 'Answer received but deep evaluation could not be parsed. Please review manually.',
+        tips: ['Review the core concept once more'],
         conceptsCovered: [],
-        conceptsMissing: []
+        conceptsMissing: [],
       };
     }
-  }
+  },
 };
 
 module.exports = TestService;

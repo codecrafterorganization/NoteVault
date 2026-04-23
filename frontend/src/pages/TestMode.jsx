@@ -20,6 +20,7 @@ const TestMode = () => {
   
   const [allNotes, setAllNotes] = useState([]);
   const [selectedNoteId, setSelectedNoteId] = useState(noteId !== 'general' ? noteId : null);
+  const [errorMsg, setErrorMsg] = useState(null);
   
   const containerRef = useRef(null);
 
@@ -43,7 +44,9 @@ const TestMode = () => {
         .then(res => res.json())
         .then(data => {
           if (data.notes && data.notes.length > 0) {
-            setAllNotes(data.notes);
+            // Only show notes that have actual content
+            const usableNotes = data.notes.filter(n => n.content && n.content.trim().length >= 50);
+            setAllNotes(usableNotes.length > 0 ? usableNotes : dummyNotes);
           } else {
             setAllNotes(dummyNotes);
           }
@@ -60,6 +63,7 @@ const TestMode = () => {
     if (!targetId || targetId === 'general') return alert('Please select a note to test on.');
 
     setStep('evaluating');
+    setErrorMsg(null);
     try {
       const res = await fetch('http://localhost:5000/api/test/generate', {
         method: 'POST',
@@ -73,11 +77,12 @@ const TestMode = () => {
         setStep('testing');
         if (difficulty === 'Advanced') setTimeLeft(3600);
       } else {
-        alert('Error: ' + data.error);
+        setErrorMsg(data.error || 'Failed to generate test. Please try a different note.');
         setStep('select');
       }
     } catch (err) {
       console.error(err);
+      setErrorMsg('Could not reach the server. Make sure the backend is running.');
       setStep('select');
     }
   };
@@ -175,6 +180,15 @@ const TestMode = () => {
                   </div>
                 ))}
              </div>
+          </div>
+        )}
+
+        {/* Error Banner */}
+        {errorMsg && (
+          <div className="w-full flex items-center gap-3 px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
+            <AlertTriangle size={18} className="shrink-0" />
+            <span>{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)} className="ml-auto text-red-400/50 hover:text-red-400 text-xs">✕</button>
           </div>
         )}
 

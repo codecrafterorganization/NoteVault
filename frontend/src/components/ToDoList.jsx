@@ -47,24 +47,21 @@ const ToDoList = () => {
         ))}
       </div>
 
-      <form onSubmit={addTask} className="mt-2 px-2 z-10 flex">
-        <div className="relative w-full input-wrapper">
-          <input
-            type="text"
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            placeholder="Add a new task..."
-            className="mono-input-line pl-2 pr-10"
-          />
-          <button 
-            type="submit" 
-            disabled={!newTask.trim()}
-            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-100 disabled:opacity-30 transition-colors"
-          >
-            <Plus size={18} />
-          </button>
-          <div className="input-focus-line"></div>
-        </div>
+      <form onSubmit={addTask} className="mt-4 px-2 z-10 flex gap-2">
+        <input
+          type="text"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          placeholder="What's next on your study list?"
+          className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
+        />
+        <button 
+          type="submit" 
+          disabled={!newTask.trim()}
+          className="bg-white text-black p-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:hover:scale-100 flex items-center justify-center"
+        >
+          <Plus size={18} />
+        </button>
       </form>
     </div>
   );

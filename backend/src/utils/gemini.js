@@ -10,7 +10,7 @@ if (!apiKey) {
 }
 
 // Default model configuration
-const DEFAULT_MODEL = 'gemini-flash-latest';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 
 // Track API failures
 let apiCallCount = 0;
@@ -23,45 +23,88 @@ const MAX_API_CALLS = 1000;
  * @returns {Promise<string>} - The generated response text
  */
 async function generateContent(prompt, options = {}) {
-  // Always get the latest key from env in case it was updated
   const currentApiKey = process.env.GEMINI_API_KEY;
-  
+
+  // If no Gemini key, go straight to Groq
   if (!currentApiKey) {
-    console.error('[Gemini] ERROR: GEMINI_API_KEY not found in environment.');
-    return generateFallbackResponse(prompt);
+    console.warn('[Gemini] No API key — falling back to Groq.');
+    return generateViaGroq(prompt, options);
   }
 
-  try {
-    const modelStr = options.model || DEFAULT_MODEL;
-    console.log(`[Gemini] Attempting ${modelStr} (Key: ${currentApiKey.substring(0, 8)}...)`);
-    
-    const result = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelStr}:generateContent?key=${currentApiKey}`,
-      {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens || 1024,
-        }
-      },
-      { timeout: 15000 } // 15s timeout
-    );
+  const maxRetries = options.retries ?? 1;
 
-    const text = result.data.candidates[0].content.parts[0].text;
-    apiCallCount++;
-    console.log('[Gemini] Success ✓');
-    return text;
-  } catch (error) {
-    const status = error.response?.status;
-    const errorData = error.response?.data?.error || {};
-    console.error('[Gemini] API ERROR:', status, errorData.message || error.message);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const modelStr = options.model || DEFAULT_MODEL;
+      console.log(`[Gemini] Attempt ${attempt + 1}/${maxRetries + 1} using ${modelStr}`);
+      
+      const result = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelStr}:generateContent?key=${currentApiKey}`,
+        {
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: options.temperature ?? 0.7,
+            maxOutputTokens: options.maxTokens || 1024,
+          }
+        },
+        { timeout: 30000 }
+      );
 
-    // If it's a 404, maybe the model name is wrong for this key
-    if (status === 404 && !options.model) {
-      console.log('[Gemini] 404 - Retrying with gemini-pro-latest...');
-      return generateContent(prompt, { ...options, model: 'gemini-pro-latest' });
+      const text = result.data.candidates[0].content.parts[0].text;
+      apiCallCount++;
+      console.log('[Gemini] Success ✓');
+      return text;
+    } catch (error) {
+      const status = error.response?.status;
+      const errorMsg = error.response?.data?.error?.message || error.message;
+      console.error(`[Gemini] Attempt ${attempt + 1} failed: ${status}`);
+
+      // Rate limited or quota — fall back to Groq immediately
+      if (status === 429 || status === 400) {
+        console.log('[Gemini] Quota/Rate limit — switching to Groq fallback...');
+        return generateViaGroq(prompt, options);
+      }
+
+      // Wrong model — retry with flash-lite once
+      if (status === 404 && !options.model) {
+        return generateContent(prompt, { ...options, model: 'gemini-2.0-flash-lite', retries: 0 });
+      }
     }
+  }
 
+  // Final fallback to Groq
+  return generateViaGroq(prompt, options);
+}
+
+/**
+ * Groq fallback — uses LLaMA 3.3 70B via Groq when Gemini is unavailable
+ */
+async function generateViaGroq(prompt, options = {}) {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (!groqKey) {
+    console.error('[Groq Fallback] GROQ_API_KEY not set. Using static fallback.');
+    return generateFallbackResponse(prompt);
+  }
+  try {
+    console.log('[Groq Fallback] Calling llama-3.3-70b-versatile...');
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: options.maxTokens || 1024,
+        temperature: options.temperature ?? 0.7,
+      },
+      {
+        headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+        timeout: 60000,
+      }
+    );
+    const text = response.data.choices[0].message.content;
+    console.log('[Groq Fallback] Success ✓');
+    return text;
+  } catch (err) {
+    console.error('[Groq Fallback] Failed:', err.response?.status, err.message);
     return generateFallbackResponse(prompt);
   }
 }
@@ -399,8 +442,19 @@ async function fixCodeSnippet(code, error, language = 'javascript') {
  * Summarize text
  */
 async function summarize(text) {
-  const prompt = `Summarize the following notes in 3-4 concise, professional sentences that capture the main essence:\n\n${text.slice(0, 10000)}\n\nSummary:`;
-  return await generateContent(prompt, { temperature: 0.5, maxTokens: 300 });
+  const prompt = `You are a master of brevity. Distill the following complex notes into a high-impact, professional executive summary. 
+Focus on the "So What?" — why does this information matter?
+
+RULES:
+- Use 3-5 punchy, information-dense sentences.
+- Use bullet points for any critical statistics or names.
+- Ensure it captures the overall arc of the content.
+
+NOTES:
+${text.slice(0, 15000)}
+
+Summary:`;
+  return await generateContent(prompt, { temperature: 0.4, maxTokens: 500 });
 }
 
 /**

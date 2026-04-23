@@ -109,7 +109,7 @@ router.get('/', async (req, res) => {
   try {
     const { data: notes, error } = await supabase
       .from('notes')
-      .select('id, title, file_type, uploaded_at')
+      .select('id, title, file_type, uploaded_at, content')
       .order('uploaded_at', { ascending: false });
 
     if (error) {
@@ -123,7 +123,8 @@ router.get('/', async (req, res) => {
       id: n.id,
       title: n.title,
       fileType: n.file_type,
-      createdAt: n.uploaded_at
+      createdAt: n.uploaded_at,
+      content: n.content || '' // include content so frontend can filter empty notes
     }));
 
     return res.json({ notes: mappedNotes });

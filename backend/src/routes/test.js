@@ -33,6 +33,14 @@ router.post('/generate', async (req, res) => {
 
       if (fetchError || !note) return res.status(404).json({ success: false, error: 'Note not found.' });
       noteContent = note.content;
+
+      // ✅ Guard: If content is empty/null, tell the user clearly
+      if (!noteContent || noteContent.trim().length < 50) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'This note has no extracted content. Please re-upload the file — the AI needs readable text to generate a test.' 
+        });
+      }
     }
 
     // 2. Generate questions via AI
