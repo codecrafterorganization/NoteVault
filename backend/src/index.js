@@ -98,6 +98,7 @@ app.use('/api/notes', notesRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/explain', explainRouter);
 app.use('/api/quiz', quizRouter);
+app.use('/api/test', testRouter);
 app.use('/api/cheatsheet', cheatsheetRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/search', searchRouter);
