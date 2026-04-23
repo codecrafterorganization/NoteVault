@@ -10,12 +10,12 @@ if (!apiKey) {
 }
 
 // Default model configuration
-const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 
 // Track API failures for fallback mode
 let apiQuotaExceeded = false;
 let apiCallCount = 0;
-const MAX_API_CALLS = 15; // Stay under the 20/day free tier limit
+const MAX_API_CALLS = 200; // High limit for development/demo use
 
 /**
  * Generate content using Gemini AI

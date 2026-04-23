@@ -22,13 +22,26 @@ router.post('/ask', askValidation, async (req, res) => {
     const { noteId, question } = req.body;
     console.log('[chat/ask] Request received. noteId:', noteId, 'question:', question);
 
-    const { data: note, error: fetchError } = await supabase.from('notes').select('*').eq('id', noteId).single();
-    if (fetchError || !note) {
-      console.error('[chat/ask] Note not found in DB.', fetchError?.message);
-      return res.json({ success: false, error: 'Note not found.' });
-    }
+    let noteContent = '';
 
-    const noteContent = note.content || '';
+    // Handle dummy notes for demo
+    const DUMMY_CONTENT = {
+      'dummy-biology': 'Cellular respiration is the process by which cells break down glucose to produce ATP. It involves glycolysis, pyruvate oxidation, Krebs cycle, and electron transport chain. Net yield is approximately 36-38 ATP per glucose molecule.',
+      'dummy-thermo': 'Thermodynamics covers laws of energy transfer. First Law: energy conservation (ΔU = Q - W). Second Law: entropy always increases. Gibbs Free Energy ΔG = ΔH - TΔS determines spontaneity.',
+      'dummy-chem': 'Organic Chemistry covers functional groups, reaction mechanisms including SN1, SN2, E1, E2 eliminations. Aldehydes oxidize to carboxylic acids. Aromatic compounds undergo electrophilic aromatic substitution.',
+      'dummy-quantum': 'Quantum mechanics describes particle-wave duality. Heisenberg uncertainty principle: Δx·Δp ≥ ℏ/2. Schrödinger equation: Hψ = Eψ. Quantum numbers n, l, ml, ms describe electron states.'
+    };
+
+    if (noteId.startsWith('dummy-')) {
+      noteContent = DUMMY_CONTENT[noteId] || 'This is a general science topic. Please ask specific questions.';
+    } else {
+      const { data: note, error: fetchError } = await supabase.from('notes').select('*').eq('id', noteId).single();
+      if (fetchError || !note) {
+        console.error('[chat/ask] Note not found in DB.', fetchError?.message);
+        return res.json({ success: false, error: 'Note not found.' });
+      }
+      noteContent = note.content || '';
+    }
     const answer = await askQuestion(noteContent, question);
     
     // Save to Supabase
