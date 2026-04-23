@@ -58,13 +58,24 @@ router.post('/generate', [
     const { noteId, questionCount = 5, difficulty = 'Medium' } = req.body;
     console.log('[quiz/generate] Request received. noteId:', noteId, 'questionCount:', questionCount, 'difficulty:', difficulty);
 
-    const { data: note, error: fetchError } = await supabase.from('notes').select('*').eq('id', noteId).single();
-    if (fetchError || !note) {
-      console.error('[quiz/generate] Note not found.', fetchError?.message);
-      return res.json({ success: false, error: 'Note not found.' });
-    }
+    const DUMMY_CONTENT = {
+      'dummy-biology': 'Cellular respiration is the process by which cells break down glucose to produce ATP. It involves glycolysis (cytoplasm), pyruvate oxidation, Krebs cycle (mitochondrial matrix), and electron transport chain (inner mitochondrial membrane). O2 is the final electron acceptor. Net yield is approximately 36-38 ATP per glucose molecule.',
+      'dummy-thermo': 'Thermodynamics has four laws. The first law states energy is conserved: ΔU = Q - W. The second law says entropy of an isolated system always increases. Gibbs free energy ΔG = ΔH - TΔS determines if a reaction is spontaneous. Carnot efficiency = 1 - Tcold/Thot.',
+      'dummy-chem': 'Organic chemistry reactions include SN1 (unimolecular, 3° substrates, racemization) and SN2 (bimolecular, 1° substrates, inversion of configuration). Primary alcohols oxidize to aldehydes then to carboxylic acids. Benzene undergoes electrophilic aromatic substitution. Activating groups are ortho/para directors.',
+      'dummy-quantum': 'Quantum mechanics is based on wave-particle duality. The Heisenberg uncertainty principle states: Δx·Δp ≥ ℏ/2. The Schrödinger equation is Hψ = Eψ. The four quantum numbers are: principal n, angular momentum l, magnetic ml, and spin ms. The Pauli exclusion principle states no two electrons can have identical quantum numbers.'
+    };
 
-    const noteContent = note.content?.substring(0, 2500) || 'No content';
+    let noteContent;
+    if (noteId.startsWith('dummy-')) {
+      noteContent = DUMMY_CONTENT[noteId] || 'This is a science topic covering core concepts and principles.';
+    } else {
+      const { data: note, error: fetchError } = await supabase.from('notes').select('*').eq('id', noteId).single();
+      if (fetchError || !note) {
+        console.error('[quiz/generate] Note not found.', fetchError?.message);
+        return res.json({ success: false, error: 'Note not found.' });
+      }
+      noteContent = note.content?.substring(0, 2500) || 'No content';
+    }
     if (noteContent.length < 20) {
       return res.json({ success: false, error: 'Note content too short. Please upload a longer note.' });
     }
