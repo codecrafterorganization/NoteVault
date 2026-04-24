@@ -291,42 +291,65 @@ Provide a clear explanation that a student can easily understand. Break down com
 /**
  * Generate quiz from note content
  * @param {string} noteContent - The content to generate quiz from
- * @param {string} difficulty - The difficulty level (Easy, Medium, Hard)
+ * @param {string} difficulty - The difficulty level (easy, medium, hard)
+ * @param {number} questionCount - Number of questions to generate
  * @returns {Promise<string>} - JSON string with quiz questions
  */
-async function generateQuiz(noteContent, difficulty = 'Medium') {
-  const prompt = `You are an expert educator creating multiple-choice quizzes.
+async function generateQuiz(noteContent, difficulty = 'medium', questionCount = 10) {
+  const difficultyInstructions = {
+    easy: `
+      - Ask about facts directly stated in the notes
+      - Simple, clear question language
+      - Incorrect options are clearly wrong but plausible
+      - One obviously correct answer`,
+    medium: `
+      - Require understanding and application of concepts
+      - Test connections between ideas in the notes
+      - Options are all plausible but one is best
+      - Some questions may require inference`,
+    hard: `
+      - Require analysis and synthesis of multiple concepts
+      - Test deep understanding
+      - All options are plausible and nuanced
+      - Questions require reasoning, not just recall`
+  };
+  
+  const prompt = `
+You are an expert educator creating a quiz from student notes.
 
-Generate 5 ${difficulty.toUpperCase()} difficulty multiple-choice questions from the following study material. 
-Ensure the cognitive complexity matches the ${difficulty} level (e.g., Easy = basic recall, Medium = comprehension/application, Hard = analysis/evaluation).
+DIFFICULTY: ${difficulty.toUpperCase()}
+${difficultyInstructions[difficulty.toLowerCase()] || difficultyInstructions.medium}
 
-IMPORTANT: Respond ONLY with a valid JSON array. Do not include markdown formatting, code blocks, or any other text.
+STUDENT NOTES:
+${noteContent.substring(0, 6000)}
 
-Format:
-[
-  {
-    "question": "What is the capital of France?",
-    "options": ["London", "Berlin", "Paris", "Madrid"],
-    "correctAnswer": "C",
-    "explanation": "Paris is the capital of France."
-  }
-]
+Generate exactly ${questionCount} multiple choice questions.
 
-Requirements:
-- Return ONLY the JSON array
-- No markdown code blocks (no \`\`\`json)
-- No extra text before or after
-- Exactly 5 questions
-- Each question has 4 options (A, B, C, D)
-- correctAnswer must be "A", "B", "C", or "D"
-- Include brief explanation for each answer
+CRITICAL RULES:
+1. Every question MUST come from the notes above — no outside knowledge
+2. Each question has exactly 4 options (A, B, C, D)
+3. Only ONE option is correct
+4. Explanations must reference the notes
 
-STUDY MATERIAL:
-${noteContent.substring(0, 5000)}
+Return ONLY valid JSON (no markdown, no backticks, no explanation):
+{
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Question text?",
+      "options": {
+        "A": "Option A",
+        "B": "Option B",
+        "C": "Option C",
+        "D": "Option D"
+      },
+      "correct": "B",
+      "explanation": "B is correct because [reference to notes]..."
+    }
+  ]
+}`;
 
-Generate the ${difficulty} quiz now:`;
-
-  return await generateContent(prompt, { temperature: 0.3, maxTokens: 600 });
+  return await generateContent(prompt, { temperature: 0.3, maxTokens: 1500 });
 }
 
 /**

@@ -35,6 +35,7 @@ const NAV_GROUPS = [
   {
     label: 'Assessment',
     items: [
+      { id: 'testmode', label: 'Test Mode', icon: Brain, route: '/test/general', desc: 'Adaptive Quiz Generator' },
       { id: 'battle', label: 'Battle Mode', icon: Swords, route: '/battle', desc: 'Real-time 1v1 battles', badge: 'NEW' },
       { id: 'performance', label: 'Performance', icon: Activity, route: '/performance', desc: 'Track your progress' },
     ],

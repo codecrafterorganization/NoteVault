@@ -1,35 +1,62 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Brain, Timer, CheckCircle, Upload, ArrowRight, ArrowLeft, Loader2, AlertTriangle, Flag } from 'lucide-react';
+import { Brain, Timer, CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertTriangle, XCircle, FileWarning } from 'lucide-react';
+
+const LoadingSpinner = ({ text }) => (
+  <div className="w-full h-screen flex flex-col items-center justify-center gap-4">
+    <Loader2 size={40} className="text-blue-500 animate-spin" />
+    <p className="text-slate-400 font-medium">{text}</p>
+  </div>
+);
+
+const ErrorMessage = ({ message }) => (
+  <div className="w-full max-w-4xl p-4 mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+    <AlertTriangle size={20} className="text-red-500 shrink-0" />
+    <span className="text-red-200 text-sm">{message}</span>
+  </div>
+);
+
+const EmptyState = ({ title, description, action, actionText }) => (
+  <div className="w-full p-8 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-4 text-center">
+    <FileWarning size={32} className="text-slate-500" />
+    <div>
+      <h3 className="text-white font-bold">{title}</h3>
+      <p className="text-slate-400 text-sm mt-1">{description}</p>
+    </div>
+    {action && (
+      <button onClick={action} className="mt-2 px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-colors">
+        {actionText}
+      </button>
+    )}
+  </div>
+);
 
 const TestMode = () => {
   const { noteId } = useParams();
   const navigate = useNavigate();
   
-  const [step, setStep] = useState('select'); // 'select' | 'testing' | 'evaluating' | 'results'
-  const [difficulty, setDifficulty] = useState('Intermediate');
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [step, setStep] = useState('select'); // select | loading | testing | evaluating | results
+  
+  const [difficulty, setDifficulty] = useState('medium');
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [sessionId, setSessionId] = useState(null);
+  const [answers, setAnswers] = useState([]); // Array of { questionId, selected }
+  const [quizId, setQuizId] = useState(null);
   
-  const [isUploading, setIsUploading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(3600);
+  const [timeTaken, setTimeTaken] = useState(0);
   const [results, setResults] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [flagged, setFlagged] = useState(new Set());
+  const [errorMsg, setErrorMsg] = useState(null);
   
   const [allNotes, setAllNotes] = useState([]);
   const [selectedNoteId, setSelectedNoteId] = useState(noteId !== 'general' ? noteId : null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  
-  const containerRef = useRef(null);
 
-  // Level Selection Info
+  const timerRef = useRef(null);
+
   const levels = [
-    { name: 'Beginner', desc: '10 MCQs • Core concepts • Quick review', time: 'No limit' },
-    { name: 'Intermediate', desc: '8 MCQs + 7 Short Answers • Hand-written support', time: 'No limit' },
-    { name: 'Advanced', desc: '12 MCQs + 8 Long Answers • Critical analysis', time: '60 minutes' }
+    { id: 'easy', name: 'Easy', desc: 'Direct recall • Simple language • Clear options' },
+    { id: 'medium', name: 'Medium', desc: 'Application • Connect concepts • Inference' },
+    { id: 'hard', name: 'Hard', desc: 'Analysis • Synthesis • Nuanced plausible options' }
   ];
 
   useEffect(() => {
@@ -38,53 +65,51 @@ const TestMode = () => {
         .then(res => res.json())
         .then(data => {
           if (data.notes && data.notes.length > 0) {
-            const usableNotes = data.notes.filter(n => n.content && n.content.trim().length >= 50);
-            setAllNotes(usableNotes);
-          } else {
-            setAllNotes([]);
+            setAllNotes(data.notes.filter(n => n.content || n.extracted_text));
           }
         })
-        .catch(err => {
-          console.error(err);
-          setAllNotes([]);
-        });
+        .catch(console.error);
     }
   }, [noteId]);
 
-  // Timer for Advanced mode
+  // Timer tracking
   useEffect(() => {
-    if (step !== 'testing' || difficulty !== 'Advanced') return;
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) { clearInterval(interval); submitTest(); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [step, difficulty]);
-
-  const timerColor = timeLeft <= 300 ? 'text-red-400 bg-red-500/10 border-red-500/30' : timeLeft <= 600 ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' : 'text-white bg-white/5 border-white/10';
+    if (step === 'testing') {
+      timerRef.current = setInterval(() => {
+        setTimeTaken(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [step]);
 
   const startTest = async () => {
     const targetId = selectedNoteId || noteId;
-    if (!targetId || targetId === 'general') return alert('Please select a note to test on.');
+    if (!targetId || targetId === 'general') {
+      setErrorMsg('Please select a note to test on.');
+      return;
+    }
 
-    setStep('evaluating');
+    setStep('loading');
     setErrorMsg(null);
     try {
-      const res = await fetch('http://localhost:5000/api/test/generate', {
+      const res = await fetch('http://localhost:5000/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ noteId: targetId, difficulty })
+        body: JSON.stringify({ noteId: targetId, difficulty, questionCount: 10 })
       });
       const data = await res.json();
+      
       if (data.success) {
         setQuestions(data.questions);
-        setSessionId(data.sessionId);
+        setQuizId(data.quizId);
+        setTimeTaken(0);
+        setAnswers([]);
+        setCurrentIndex(0);
         setStep('testing');
-        if (difficulty === 'Advanced') setTimeLeft(3600);
       } else {
-        setErrorMsg(data.error || 'Failed to generate test. Please try a different note.');
+        setErrorMsg(data.error || 'Failed to generate quiz. Please try again.');
         setStep('select');
       }
     } catch (err) {
@@ -94,381 +119,271 @@ const TestMode = () => {
     }
   };
 
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      setShowConfirm(true);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-  };
-
-  const toggleFlag = () => {
-    setFlagged(prev => {
-      const next = new Set(prev);
-      next.has(currentIndex) ? next.delete(currentIndex) : next.add(currentIndex);
-      return next;
+  const handleOptionSelect = (optionKey) => {
+    const questionId = questions[currentIndex].id;
+    setAnswers(prev => {
+      const existingIndex = prev.findIndex(a => a.questionId === questionId);
+      if (existingIndex >= 0) {
+        const newAnswers = [...prev];
+        newAnswers[existingIndex] = { questionId, selected: optionKey };
+        return newAnswers;
+      } else {
+        return [...prev, { questionId, selected: optionKey }];
+      }
     });
   };
-
-  const answeredCount = questions.filter(q => answers[q.id]).length;
 
   const submitTest = async () => {
     setStep('evaluating');
     try {
-      const res = await fetch('http://localhost:5000/api/test/submit', {
+      const res = await fetch('http://localhost:5000/api/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, answers })
+        body: JSON.stringify({ quizId, answers, timeTaken })
       });
       const data = await res.json();
       if (data.success) {
         setResults(data);
         setStep('results');
       } else {
-        alert('Evaluation failed.');
+        setErrorMsg('Evaluation failed.');
         setStep('testing');
       }
     } catch (err) {
       console.error(err);
+      setErrorMsg('Error submitting quiz.');
       setStep('testing');
     }
   };
 
-  const handleOCR = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    try {
-      const res = await fetch('http://localhost:5000/api/test/ocr', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAnswers(prev => ({ ...prev, [questions[currentIndex].id]: data.text }));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  // --- RENDERS ---
+
+  if (step === 'loading') {
+    return <LoadingSpinner text="Generating your personalized adaptive quiz..." />;
+  }
+
+  if (step === 'evaluating') {
+    return <LoadingSpinner text="Evaluating your answers with Gemini..." />;
+  }
 
   if (step === 'select') {
     return (
-      <div className="w-full h-screen flex flex-col p-8 gap-12 items-center overflow-y-auto no-scrollbar">
+      <div className="relative z-10 w-full h-screen flex flex-col p-8 gap-12 items-center overflow-y-auto no-scrollbar">
         <div className="flex flex-col items-center gap-4 text-center mt-8">
           <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center">
-            <Brain size={32} className="text-white" />
+            <Brain size={32} className="text-blue-400" />
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">Advanced Test Mode</h1>
-          <p className="text-slate-400 max-w-md">Our AI will analyze your notes to create a custom exam. Choose your difficulty level to begin.</p>
+          <h1 className="text-4xl font-bold text-white tracking-tight">Adaptive Quiz Generator</h1>
+          <p className="text-slate-400 max-w-md">Our AI will generate exactly 10 targeted multiple-choice questions from your notes based on your chosen difficulty.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+        {errorMsg && <ErrorMessage message={errorMsg} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
           {levels.map(l => (
             <div 
-              key={l.name}
-              onClick={() => setDifficulty(l.name)}
-              className={`p-6 rounded-3xl border transition-all cursor-pointer flex flex-col gap-4 ${difficulty === l.name ? 'bg-white/10 border-white shadow-lg' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
+              key={l.id}
+              onClick={() => setDifficulty(l.id)}
+              className={`p-6 rounded-3xl border transition-all cursor-pointer flex flex-col gap-4 ${difficulty === l.id ? 'bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
             >
               <h3 className="text-xl font-bold text-white">{l.name}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{l.desc}</p>
-              <div className="mt-auto flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                <Timer size={12} /> {l.time}
-              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">{l.desc}</p>
             </div>
           ))}
         </div>
 
         {noteId === 'general' && (
-          <div className="w-full flex flex-col gap-4 mt-4">
+          <div className="w-full max-w-4xl flex flex-col gap-4 mt-4">
              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest text-center">Select Note for Exam</h3>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {allNotes.map(n => (
-                  <div 
-                    key={n.id}
-                    onClick={() => setSelectedNoteId(n.id)}
-                    className={`p-3 rounded-xl border text-[11px] font-medium transition-all cursor-pointer truncate ${selectedNoteId === n.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10'}`}
-                  >
-                    {n.title}
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-
-        {/* Error Banner */}
-        {errorMsg && (
-          <div className="w-full flex items-center gap-3 px-5 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
-            <AlertTriangle size={18} className="shrink-0" />
-            <span>{errorMsg}</span>
-            <button onClick={() => setErrorMsg(null)} className="ml-auto text-red-400/50 hover:text-red-400 text-xs">✕</button>
+             {allNotes.length === 0 ? (
+               <EmptyState title="No notes found" description="Upload a note first to generate a quiz." action={() => navigate('/dashboard')} actionText="Go to Dashboard" />
+             ) : (
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {allNotes.map(n => (
+                    <div 
+                      key={n.id}
+                      onClick={() => setSelectedNoteId(n.id)}
+                      className={`p-3 rounded-xl border text-[11px] font-medium transition-all cursor-pointer truncate ${selectedNoteId === n.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10'}`}
+                    >
+                      {n.title}
+                    </div>
+                  ))}
+               </div>
+             )}
           </div>
         )}
 
         <button 
           onClick={startTest}
-          disabled={noteId === 'general' && !selectedNoteId}
-          className="mt-8 px-12 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-all shadow-xl shadow-white/10 disabled:opacity-50"
+          disabled={!selectedNoteId && noteId === 'general'}
+          className="mt-8 px-8 py-4 bg-white text-black rounded-full font-bold shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >
-          Initialize Exam
+          Generate Quiz
         </button>
       </div>
     );
   }
 
-  if (step === 'evaluating') {
-    return (
-      <div className="w-full h-screen flex flex-col items-center justify-center gap-6">
-        <Loader2 size={48} className="text-white animate-spin" />
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white">AI Examiner at Work</h2>
-          <p className="text-slate-400 mt-2">Processing notes and calculating results...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (step === 'testing') {
-    const q = questions[currentIndex];
-    const answerText = answers[q.id] || '';
-    const charCount = answerText.length;
-    const wordCount = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
+    const currentQ = questions[currentIndex];
+    const currentAnswer = answers.find(a => a.questionId === currentQ.id)?.selected;
 
     return (
-      <div className="w-full h-screen flex flex-col p-6 max-w-5xl mx-auto overflow-hidden">
-        <header className="flex justify-between items-center mb-4 shrink-0">
-          <div className="flex items-center gap-4">
-             <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-400">
-                {currentIndex + 1} / {questions.length}
+      <div className="relative z-10 w-full h-screen flex flex-col items-center p-8 overflow-y-auto no-scrollbar">
+        {/* Header */}
+        <div className="w-full max-w-3xl flex justify-between items-center mb-8 bg-white/5 p-4 rounded-2xl border border-white/10">
+           <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white">
+               {currentIndex + 1}
              </div>
-             <h2 className="text-sm font-bold text-white uppercase tracking-widest">{difficulty} LEVEL</h2>
-             <button onClick={toggleFlag} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${flagged.has(currentIndex) ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}>
-               <Flag size={12} /> {flagged.has(currentIndex) ? 'Flagged' : 'Flag'}
-             </button>
-          </div>
-          {difficulty === 'Advanced' && (
-            <div className={`flex items-center gap-2 px-4 py-2 border rounded-full font-mono text-sm transition-colors ${timerColor}`}>
-              <Timer size={16} /> {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-              {timeLeft <= 300 && <span className="text-[9px] font-bold uppercase animate-pulse">⚠ Hurry!</span>}
-            </div>
-          )}
-        </header>
-
-        {/* Question Navigator Dots */}
-        <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-          {questions.map((qItem, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIndex(i)}
-              className={`w-7 h-7 rounded-lg text-[10px] font-bold border transition-all ${
-                i === currentIndex ? 'bg-white text-black border-white scale-110' :
-                flagged.has(i) ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' :
-                answers[qItem.id] ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
-                'bg-white/5 border-white/10 text-slate-500 hover:border-white/20'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
+             <div className="flex flex-col">
+               <span className="text-xs text-slate-400 font-bold tracking-widest uppercase">Question</span>
+               <span className="text-sm font-medium text-white">{currentIndex + 1} of {questions.length}</span>
+             </div>
+           </div>
+           
+           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+             <Timer size={16} className="text-slate-400" />
+             <span className="text-sm font-medium text-white">{Math.floor(timeTaken / 60)}:{(timeTaken % 60).toString().padStart(2, '0')}</span>
+           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-1 bg-white/5 rounded-full mb-6 overflow-hidden">
-           <div className="h-full bg-white transition-all duration-500 ease-out" style={{ width: `${(answeredCount / questions.length) * 100}%` }} />
-        </div>
+        {errorMsg && <ErrorMessage message={errorMsg} />}
 
-        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-8 pb-28">
-          <div className="flex items-start gap-3">
-            <span className="text-[10px] font-bold text-slate-600 uppercase mt-1">{q.type === 'MCQ' ? 'MCQ' : q.type === 'SHORT_ANSWER' ? 'Short' : 'Long'}</span>
-            <h3 className="text-2xl font-medium text-white leading-relaxed">{q.text}</h3>
-          </div>
-          
-          {q.type === 'MCQ' ? (
-            <div className="grid grid-cols-1 gap-4">
-              {q.options.map((opt, i) => {
-                const letter = String.fromCharCode(65 + i);
-                return (
-                  <button key={i} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: letter }))}
-                    className={`flex items-center gap-4 p-5 rounded-2xl border transition-all text-left ${answers[q.id] === letter ? 'bg-white/10 border-white text-white' : 'bg-white/[0.02] border-white/5 text-slate-400 hover:border-white/20'}`}>
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${answers[q.id] === letter ? 'bg-white text-black' : 'bg-white/5 text-slate-500'}`}>{letter}</span>
-                    <span className="text-lg">{opt}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <textarea value={answerText} onChange={(e) => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-                placeholder="Type your answer here..."
-                className="w-full min-h-[250px] bg-white/[0.02] border border-white/10 rounded-3xl p-6 text-white focus:outline-none focus:border-white/30 transition-all resize-none leading-relaxed" />
-              <div className="flex justify-between items-center">
-                 <div className="flex items-center gap-4">
-                   <p className="text-[10px] text-slate-500 uppercase tracking-widest">
-                     {q.type === 'SHORT_ANSWER' ? `${charCount} chars (min 20)` : `${wordCount} words (min 100)`}
-                   </p>
-                   {((q.type === 'SHORT_ANSWER' && charCount >= 20) || (q.type !== 'SHORT_ANSWER' && wordCount >= 100)) && (
-                     <span className="text-[10px] text-emerald-400 font-bold">✓ Met</span>
-                   )}
-                 </div>
-                 <label className="flex items-center gap-2 cursor-pointer px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs text-slate-300 border border-white/10 transition-all">
-                    <Upload size={14} />
-                    {isUploading ? 'Extracting...' : 'Upload Handwritten'}
-                    <input type="file" className="hidden" onChange={handleOCR} accept="image/*" />
-                 </label>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Question Area */}
+        <div className="w-full max-w-3xl flex-1 flex flex-col gap-8">
+          <h2 className="text-2xl md:text-3xl font-medium text-white leading-relaxed">
+            {currentQ.question}
+          </h2>
 
-        {/* Footer with Prev/Next */}
-        <footer className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent flex justify-center gap-4 z-20">
-          {currentIndex > 0 && (
-            <button onClick={handlePrev} className="flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-full hover:bg-white/5 transition-all">
-              <ArrowLeft size={18} /> Previous
-            </button>
-          )}
-          <button onClick={handleNext}
-            className="flex items-center gap-3 px-12 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-all shadow-xl shadow-white/10">
-            {currentIndex === questions.length - 1 ? 'Finish Exam' : 'Next Question'} <ArrowRight size={20} />
-          </button>
-        </footer>
-
-        {/* Submit Confirmation Modal */}
-        {showConfirm && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-md w-full flex flex-col gap-6">
-              <h3 className="text-xl font-bold text-white">Submit Exam?</h3>
-              <p className="text-sm text-slate-400">You cannot modify answers after submission.</p>
-              <div className="flex flex-col gap-2 text-sm">
-                <div className="flex justify-between text-slate-300">
-                  <span>Answered</span>
-                  <span className="font-bold text-white">{answeredCount} / {questions.length}</span>
+          <div className="grid grid-cols-1 gap-4 mt-4">
+            {Object.entries(currentQ.options).map(([key, value]) => {
+              const isSelected = currentAnswer === key;
+              return (
+                <div 
+                  key={key}
+                  onClick={() => handleOptionSelect(key)}
+                  className={`p-6 rounded-2xl border transition-all cursor-pointer flex gap-4 items-center ${isSelected ? 'bg-blue-500/10 border-blue-500' : 'bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10'}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/10 text-slate-300'}`}>
+                    {key}
+                  </div>
+                  <div className="text-slate-200 text-lg flex-1 leading-snug">{value}</div>
                 </div>
-                {questions.length - answeredCount > 0 && (
-                  <div className="flex justify-between text-yellow-400">
-                    <span>Unanswered</span>
-                    <span className="font-bold">{questions.length - answeredCount}</span>
-                  </div>
-                )}
-                {flagged.size > 0 && (
-                  <div className="flex justify-between text-yellow-400">
-                    <span>Flagged for review</span>
-                    <span className="font-bold">{flagged.size}</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-3 mt-2">
-                <button onClick={() => setShowConfirm(false)} className="flex-1 px-6 py-3 border border-white/20 rounded-full text-white text-sm hover:bg-white/5 transition-all">
-                  Go Back
-                </button>
-                <button onClick={() => { setShowConfirm(false); submitTest(); }} className="flex-1 px-6 py-3 bg-white text-black font-bold rounded-full text-sm hover:scale-105 transition-all">
-                  Submit
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="w-full max-w-3xl flex justify-between items-center mt-8 pt-8 border-t border-white/10">
+          <button 
+            onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+            disabled={currentIndex === 0}
+            className="flex items-center gap-2 px-6 py-3 rounded-full font-medium text-white bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-30"
+          >
+            <ArrowLeft size={18} /> Previous
+          </button>
+          
+          <div className="text-sm font-medium text-slate-400">
+            {answers.length} of {questions.length} answered
+          </div>
+
+          {currentIndex === questions.length - 1 ? (
+            <button 
+              onClick={submitTest}
+              className="flex items-center gap-2 px-8 py-3 rounded-full font-bold text-black bg-white hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+            >
+              Submit Quiz <CheckCircle size={18} />
+            </button>
+          ) : (
+            <button 
+              onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
+              className="flex items-center gap-2 px-6 py-3 rounded-full font-medium text-white bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              Next <ArrowRight size={18} />
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
-  if (step === 'results') {
-    const mcqResults = results.results.filter(r => r.type === 'MCQ');
-    const writtenResults = results.results.filter(r => r.type !== 'MCQ');
-    const mcqCorrect = mcqResults.filter(r => r.evaluation?.correct || r.evaluation?.score === 100).length;
-    const writtenAvg = writtenResults.length > 0 ? Math.round(writtenResults.reduce((a, r) => a + (r.evaluation?.score || 0), 0) / writtenResults.length) : null;
-    const grade = results.score >= 90 ? 'A+' : results.score >= 80 ? 'A' : results.score >= 70 ? 'B+' : results.score >= 60 ? 'B' : results.score >= 50 ? 'C' : 'D';
-
+  if (step === 'results' && results) {
     return (
-      <div className="w-full min-h-screen flex flex-col p-8 gap-8 max-w-4xl mx-auto overflow-y-auto no-scrollbar">
-        <header className="flex flex-col items-center gap-4 text-center">
-          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border border-white/20 mb-2">
-            <CheckCircle size={40} className="text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">Assessment Complete</h1>
-          <div className="text-7xl font-black text-white mt-4">{results.score}%</div>
-          <p className="text-slate-400">Grade: <span className="text-white font-bold">{grade}</span> · {difficulty} Level</p>
-        </header>
-
-        {/* Score Breakdown Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {mcqResults.length > 0 && (
-            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">MCQ Accuracy</p>
-              <p className="text-2xl font-black text-white">{mcqCorrect}/{mcqResults.length}</p>
+      <div className="relative z-10 w-full min-h-screen flex flex-col items-center p-8 overflow-y-auto no-scrollbar">
+        <div className="w-full max-w-3xl flex flex-col gap-12 mt-8">
+          
+          <div className="flex flex-col md:flex-row items-center gap-8 p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500" />
+            
+            <div className="flex-1 text-center md:text-left flex flex-col gap-2">
+              <h1 className="text-4xl font-bold text-white tracking-tight">Quiz Complete!</h1>
+              <p className="text-slate-400 text-lg">{results.feedback}</p>
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-4">
+                 <div className="px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-slate-300 uppercase tracking-widest border border-white/10">
+                   Difficulty: {difficulty}
+                 </div>
+                 <div className="px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-slate-300 uppercase tracking-widest border border-white/10">
+                   Time: {Math.floor(results.timeTaken / 60)}:{(results.timeTaken % 60).toString().padStart(2, '0')}
+                 </div>
+              </div>
             </div>
-          )}
-          {writtenAvg !== null && (
-            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Written Avg</p>
-              <p className="text-2xl font-black text-white">{writtenAvg}/100</p>
-            </div>
-          )}
-          <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Questions</p>
-            <p className="text-2xl font-black text-white">{results.results.length}</p>
-          </div>
-        </div>
 
-        <div className="flex flex-col gap-6">
-          <h2 className="text-xl font-bold text-white border-b border-white/10 pb-4">Detailed Breakdown</h2>
-          {results.results.map((r, i) => (
-            <div key={i} className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col gap-4">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] font-bold text-slate-600 uppercase bg-white/5 px-2 py-0.5 rounded">{r.type}</span>
-                  <h4 className="text-sm font-bold text-white max-w-md">{r.text}</h4>
+            <div className="flex flex-col items-center justify-center w-32 h-32 rounded-full bg-white/5 border-4 border-white/10 relative">
+               <span className="text-4xl font-bold text-white">{results.percentage}%</span>
+               <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Grade {results.grade}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <h2 className="text-xl font-bold text-white border-b border-white/10 pb-4">Detailed Review</h2>
+            
+            {results.results.map((r, i) => (
+              <div key={r.questionId} className={`p-6 rounded-2xl border ${r.correct ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'} flex flex-col gap-4`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex gap-4">
+                    <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center font-bold ${r.correct ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {i + 1}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-lg font-medium text-white leading-snug">{r.question}</h3>
+                      <div className="flex flex-wrap gap-2 text-sm mt-2">
+                         <span className="px-3 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300">
+                           Your Answer: <strong>{r.userAnswer}</strong>
+                         </span>
+                         {!r.correct && (
+                           <span className="px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                             Correct Answer: <strong>{r.correctAnswer}</strong>
+                           </span>
+                         )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="shrink-0 mt-1">
+                    {r.correct ? <CheckCircle className="text-emerald-500" size={24} /> : <XCircle className="text-red-500" size={24} />}
+                  </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-bold ${(r.evaluation?.score || 0) > 70 ? 'bg-emerald-500/20 text-emerald-400' : (r.evaluation?.score || 0) > 40 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                   {r.evaluation?.score ?? 0}/100
+                
+                <div className="ml-12 p-4 rounded-xl bg-white/5 border border-white/5 text-sm text-slate-300 leading-relaxed">
+                  <strong>Explanation:</strong> {r.explanation}
                 </div>
               </div>
-              
-              {r.evaluation?.feedback && (
-                <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/5">
-                  <p className="text-xs text-slate-400 italic mb-2">AI Feedback:</p>
-                  <p className="text-sm text-slate-200 leading-relaxed">{r.evaluation.feedback}</p>
-                </div>
-              )}
+            ))}
+          </div>
 
-              {r.evaluation?.tips && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Improvement Tips:</p>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {r.evaluation.tips.map((tip, idx) => (
-                      <li key={idx} className="text-xs text-slate-400 flex items-start gap-2">
-                        <span className="text-white">•</span> {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {r.type === 'MCQ' && r.evaluation?.correctAnswer && (
-                <p className="text-xs text-slate-500">Correct Answer: <span className="text-white font-bold">{r.evaluation.correctAnswer}</span></p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-center gap-4 mt-8 pb-12">
-          <button onClick={() => navigate('/performance')} className="px-8 py-3 border border-white/20 rounded-full text-white text-sm hover:bg-white/5 transition-all">
-            View Performance
-          </button>
-          <button onClick={() => navigate('/dashboard')} className="px-8 py-3 border border-white/20 rounded-full text-white text-sm hover:bg-white/5 transition-all">
-            Return to Workspace
-          </button>
-          <button onClick={() => { setStep('select'); setAnswers({}); setCurrentIndex(0); setFlagged(new Set()); }} className="px-8 py-3 bg-white text-black font-bold rounded-full text-sm hover:scale-105 transition-all">
-            Retake Exam
-          </button>
+          <div className="flex justify-center mt-4 mb-12">
+            <button 
+              onClick={() => {
+                setStep('select');
+                setResults(null);
+                setQuestions([]);
+              }}
+              className="px-8 py-4 rounded-full bg-white/10 text-white font-bold hover:bg-white/20 transition-all border border-white/10"
+            >
+              Take Another Quiz
+            </button>
+          </div>
         </div>
       </div>
     );
