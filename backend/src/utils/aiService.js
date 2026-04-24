@@ -25,7 +25,7 @@ async function askQuestion(noteContent, question) {
 }
 
 async function generateQuiz(noteContent, questionCount = 5, difficulty = 'Medium') {
-  return await gemini.generateQuiz(noteContent, difficulty);
+  return await gemini.generateQuiz(noteContent, difficulty, questionCount);
 }
 
 async function generateCheatsheet(noteContent) {
