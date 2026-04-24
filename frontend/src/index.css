@@ -15,7 +15,7 @@
 
 @layer base {
   body {
-    @apply bg-[#0A0D14] text-slate-100 antialiased selection:bg-slate-700 selection:text-white overflow-hidden;
+    @apply bg-[#0A0D14] text-slate-100 antialiased selection:bg-slate-700 selection:text-white overflow-x-hidden;
     font-family: 'Inter', system-ui, sans-serif;
   }
   

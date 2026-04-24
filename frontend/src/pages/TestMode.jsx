@@ -311,7 +311,7 @@ const TestMode = () => {
 
   if (step === 'results' && results) {
     return (
-      <div className="relative z-10 w-full min-h-screen flex flex-col items-center p-8 overflow-y-auto no-scrollbar">
+      <div className="relative z-10 w-full min-h-screen flex flex-col items-center p-8 overflow-y-auto">
         <div className="w-full max-w-3xl flex flex-col gap-12 mt-8">
           
           <div className="flex flex-col md:flex-row items-center gap-8 p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden">

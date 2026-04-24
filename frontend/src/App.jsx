@@ -13,7 +13,7 @@ import OfflineAI from './pages/OfflineAI';
 
 function App() {
   return (
-    <div className="relative min-h-screen w-full flex overflow-hidden bg-black selection:bg-white selection:text-black">
+    <div className="relative min-h-screen w-full flex bg-black selection:bg-white selection:text-black">
       {/* Persistent global background */}
       <Background />
       
