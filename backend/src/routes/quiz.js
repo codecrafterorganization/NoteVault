@@ -7,6 +7,18 @@ const { authenticate } = require('../middleware/authenticate');
 
 const router = express.Router();
 
+// In-memory fallback cache for quizzes (used when DB insert fails)
+// Keyed by quizId, auto-expires after 2 hours to save memory
+const quizCache = new Map();
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+function cacheQuiz(quizId, data) {
+  quizCache.set(quizId, { ...data, cachedAt: Date.now() });
+  // Cleanup old entries
+  for (const [id, entry] of quizCache.entries()) {
+    if (Date.now() - entry.cachedAt > CACHE_TTL_MS) quizCache.delete(id);
+  }
+}
+
 // Mock auth middleware fallback if needed for this implementation
 const getUserId = (req) => {
   return req.userId || req.body.userId || 'demo-user-id';
@@ -97,8 +109,11 @@ router.post('/generate', [
       .single();
 
     if (insertError) {
-      console.warn('[quiz/generate] DB Insert warning (Continuing without DB save):', insertError.message);
+      console.warn('[quiz/generate] DB Insert warning — using in-memory cache fallback:', insertError.message);
     }
+
+    // Always cache in memory so submit works even if DB save failed
+    cacheQuiz(quizId, { questions, note_id: noteId });
 
     // Sanitize questions to send to frontend (REMOVE correct answer and explanation)
     const sanitized = questions.map(q => ({
@@ -134,16 +149,26 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ success: false, error: 'quizId and answers array are required.' });
     }
 
-    // Get quiz with correct answers from DB
-    const { data: quiz, error } = await supabase
+    // Get quiz with correct answers — try DB first, fall back to in-memory cache
+    let quizData = null;
+    const { data: dbQuiz, error } = await supabase
       .from('quizzes')
       .select('questions, note_id')
       .eq('id', quizId)
       .single();
 
-    if (error || !quiz) {
-      return res.status(404).json({ success: false, error: 'Quiz not found.' });
+    if (dbQuiz && !error) {
+      quizData = dbQuiz;
+    } else if (quizCache.has(quizId)) {
+      console.log('[quiz/submit] DB miss — using in-memory cache for quiz:', quizId);
+      quizData = quizCache.get(quizId);
     }
+
+    if (!quizData) {
+      return res.status(404).json({ success: false, error: 'Quiz not found. It may have expired — please generate a new quiz.' });
+    }
+
+    const quiz = quizData;
 
     // Grade the quiz
     const results = quiz.questions.map(q => {
