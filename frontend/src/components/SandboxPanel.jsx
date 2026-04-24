@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, RotateCcw, ShieldCheck, Terminal, Copy, Wand2, Check, AlertCircle } from 'lucide-react';
 import axios from 'axios';
@@ -55,7 +56,7 @@ const SandboxPanel = ({ highlightedText }) => {
     if (!lastError && code.length < 10) return;
     setIsFixing(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/sandbox/fix', {
+      const res = await axios.post(API_BASE + '/api/sandbox/fix', {
         code,
         error: lastError || 'Check for potential improvements or bugs.',
         language

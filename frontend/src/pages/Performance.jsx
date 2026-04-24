@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -44,7 +45,7 @@ const Performance = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/test/sessions');
+        const res = await fetch(API_BASE + '/api/test/sessions');
         const data = await res.json();
         if (data.success && data.sessions && data.sessions.length > 0) {
           const allSessions = data.sessions;

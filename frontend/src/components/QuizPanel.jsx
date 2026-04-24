@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState } from 'react';
 import axios from 'axios';
 import { HelpCircle, CheckCircle, XCircle, ArrowRight, Lightbulb, Loader2 } from 'lucide-react';
@@ -20,7 +21,7 @@ const QuizPanel = ({ noteId }) => {
     setCurrentIndex(0);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/quiz/generate', {
+      const res = await axios.post(API_BASE + '/api/quiz/generate', {
         noteId: noteId || 'default-note',
         questionCount: 5,
         difficulty

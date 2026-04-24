@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Network, Loader2 } from 'lucide-react';
@@ -11,7 +12,7 @@ const GraphPanel = ({ noteId }) => {
     setIsLoading(true);
     setGraphData(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/graph/generate', {
+      const res = await axios.post(API_BASE + '/api/graph/generate', {
         noteId: noteId || 'default-note'
       });
       if (res.data.success && res.data.graph) {

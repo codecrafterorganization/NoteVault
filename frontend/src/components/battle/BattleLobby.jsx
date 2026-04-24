@@ -1,3 +1,4 @@
+import API_BASE from '../../config.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { Users, Wifi, WifiOff, Swords, Bot, Trophy, Clock, X, Check } from 'lucide-react';
 import { socket } from '../../lib/socket';
@@ -13,7 +14,7 @@ const BattleLobby = ({ username, onBattleStart, onAIChallenge }) => {
   // Fetch questions from backend
   const fetchQuestions = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/battle/questions');
+      const res = await fetch(API_BASE + '/api/battle/questions');
       const data = await res.json();
       if (data.success) return data.questions;
     } catch (e) { /* fallback */ }

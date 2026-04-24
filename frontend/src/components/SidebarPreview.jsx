@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -55,7 +56,7 @@ const UploadModal = ({ onClose, onUploaded }) => {
     fd.append('file', file);
     fd.append('title', file.name);
     try {
-      const res = await fetch('http://localhost:5000/api/notes/upload', { method: 'POST', body: fd });
+      const res = await fetch(API_BASE + '/api/notes/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.id || data.note) { onUploaded?.(); onClose(); }
       else alert('Upload failed: ' + (data.message || 'Unknown error'));

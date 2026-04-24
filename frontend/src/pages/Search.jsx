@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, FileText, ChevronRight, Hash } from 'lucide-react';
@@ -10,7 +11,7 @@ const Search = () => {
   const [allNotes, setAllNotes] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/notes')
+    fetch(API_BASE + '/api/notes')
       .then(res => res.json())
       .then(data => {
         if (data.notes) setAllNotes(data.notes);

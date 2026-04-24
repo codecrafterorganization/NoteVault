@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -13,7 +14,7 @@ const CheatsheetPanel = ({ noteId }) => {
     setIsLoading(true);
     setContent('');
     try {
-      const res = await axios.post('http://localhost:5000/api/cheatsheet/generate', {
+      const res = await axios.post(API_BASE + '/api/cheatsheet/generate', {
         noteId: noteId || 'default-note'
       });
       if (res.data.success && res.data.cheatsheet) {

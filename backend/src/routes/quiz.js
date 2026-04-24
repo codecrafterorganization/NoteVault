@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { generateQuiz, getLastProvider } = require('../utils/aiService');
 const supabase = require('../config/supabase');
 const { authenticate } = require('../middleware/authenticate');
+const { getFirebaseUuid } = require('../utils/uidHelper');
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ function cacheQuiz(quizId, data) {
 
 // Mock auth middleware fallback if needed for this implementation
 const getUserId = (req) => {
-  return req.userId || req.body.userId || 'demo-user-id';
+  return getFirebaseUuid(req.userId || req.body.userId || 'demo-user-id');
 };
 
 // POST /api/quiz/generate

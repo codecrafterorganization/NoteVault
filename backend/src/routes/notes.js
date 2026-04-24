@@ -4,6 +4,7 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const supabase = require('../config/supabase');
 const { generateMasterGuide } = require('../utils/aiService');
+const { getFirebaseUuid } = require('../utils/uidHelper');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -58,6 +59,7 @@ function validateText(text, source) {
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const title = req.body.title || req.file?.originalname || 'Untitled';
+    const userId = getFirebaseUuid(req.body.userId);
     let content = req.body.content;
     
     if (req.file) {
@@ -77,10 +79,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const { data: note, error } = await supabase
       .from('notes')
       .insert({
-        title: title,
-        content: content,
+        title,
+        content,
         file_type: fileType,
-        user_id: req.body.userId || null
+        user_id: userId
       })
       .select()
       .single();
@@ -90,7 +92,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(500).json({ success: false, message: error.message });
     }
 
-    console.log('[SUCCESS] Note created with ID:', note.id);
+    console.log(`[SUCCESS] Note created with ID: ${note.id} for user: ${userId}`);
     return res.status(201).json({
       id: note.id,
       title: note.title,
@@ -104,27 +106,39 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// GET /api/notes
+// GET /api/notes?userId=<firebase_uid>
 router.get('/', async (req, res) => {
   try {
-    const { data: notes, error } = await supabase
+    const userId = getFirebaseUuid(req.query.userId);
+
+    let query = supabase
       .from('notes')
       .select('id, title, file_type, uploaded_at, content')
       .order('uploaded_at', { ascending: false });
+
+    // Filter by user — if userId provided, show only their notes
+    // If no userId (guest), show notes with null user_id only
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      query = query.is('user_id', null);
+    }
+
+    const { data: notes, error } = await query;
 
     if (error) {
       console.error('[ERROR] Query failed:', error);
       return res.status(500).json({ success: false, message: error.message });
     }
 
-    console.log(`[SUCCESS] Retrieved ${notes.length} notes`);
+    console.log(`[SUCCESS] Retrieved ${notes.length} notes for user: ${userId || 'guest'}`);
     
     const mappedNotes = notes.map(n => ({
       id: n.id,
       title: n.title,
       fileType: n.file_type,
       createdAt: n.uploaded_at,
-      content: n.content || '' // include content so frontend can filter empty notes
+      content: n.content || ''
     }));
 
     return res.json({ notes: mappedNotes });
@@ -163,15 +177,17 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/notes/:id
+// DELETE /api/notes/:id?userId=<firebase_uid>
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const { error } = await supabase
-      .from('notes')
-      .delete()
-      .eq('id', id);
+    const userId = getFirebaseUuid(req.query.userId);
+
+    let query = supabase.from('notes').delete().eq('id', id);
+    // Only delete if owned by this user (security)
+    if (userId) query = query.eq('user_id', userId);
+
+    const { error } = await query;
 
     if (error) {
       console.error('[ERROR] Delete note failed:', error.message);
@@ -218,6 +234,7 @@ router.post('/merge', async (req, res) => {
 
     // Create a new note from the result
     const newTitle = `🧠 Group Master Guide (${notes.length} notes)`;
+    const userId = getFirebaseUuid(req.body.userId);
     
     const { data: newNote, insertError } = await supabase
       .from('notes')
@@ -225,7 +242,7 @@ router.post('/merge', async (req, res) => {
         title: newTitle,
         content: masterGuideContent,
         file_type: 'text',
-        user_id: req.body.userId || null
+        user_id: userId
       })
       .select()
       .single();

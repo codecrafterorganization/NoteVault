@@ -234,11 +234,13 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-httpServer.listen(PORT, () => {
-  console.log(`\n🚀 NoteVault Server running on http://localhost:${PORT}`);
-  console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   Socket.io  : Battle Mode enabled ⚔️`);
-  console.log(`   Health check: http://localhost:${PORT}/health\n`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  httpServer.listen(PORT, () => {
+    console.log(`\n🚀 NoteVault Server running on http://localhost:${PORT}`);
+    console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
+    console.log(`   Socket.io  : Battle Mode enabled ⚔️`);
+    console.log(`   Health check: http://localhost:${PORT}/health\n`);
+  });
+}
 
 module.exports = app;

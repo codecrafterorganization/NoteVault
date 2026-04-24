@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Book, PenTool, BookOpen, Clock, ChevronRight, Plus, Upload, Brain, LogOut, User } from 'lucide-react';
@@ -24,7 +25,7 @@ const Dashboard = () => {
   const [sessions, setSessions] = useState([]);
 
   const fetchPerformance = () => {
-    fetch('http://localhost:5000/api/test/sessions')
+    fetch(API_BASE + '/api/test/sessions')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -35,7 +36,7 @@ const Dashboard = () => {
   };
 
   const fetchNotes = () => {
-    fetch('http://localhost:5000/api/notes')
+    fetch(API_BASE + '/api/notes')
       .then(res => res.json())
       .then(data => {
         if (data.notes && data.notes.length > 0) {
@@ -72,7 +73,7 @@ const Dashboard = () => {
     formData.append('title', file.name);
 
     try {
-      const res = await fetch('http://localhost:5000/api/notes/upload', {
+      const res = await fetch(API_BASE + '/api/notes/upload', {
         method: 'POST',
         body: formData,
       });
@@ -104,7 +105,7 @@ const Dashboard = () => {
     if (selectedNotes.length < 2) return alert('Select at least 2 notes to fuse.');
     setIsMerging(true);
     try {
-      const res = await fetch('http://localhost:5000/api/notes/merge', {
+      const res = await fetch(API_BASE + '/api/notes/merge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ noteIds: selectedNotes })

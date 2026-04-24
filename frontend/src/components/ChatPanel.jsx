@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -30,7 +31,7 @@ const ChatPanel = ({ noteId, highlightedText }) => {
     setMessages(prev => [...prev, { role: 'user', content: `Can you explain this part: "${text}"?` }]);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/explain', {
+      const res = await axios.post(API_BASE + '/api/explain', {
         noteId: noteId || 'default-note',
         selectedText: text
       });
@@ -56,7 +57,7 @@ const ChatPanel = ({ noteId, highlightedText }) => {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/chat/ask', {
+      const res = await axios.post(API_BASE + '/api/chat/ask', {
         noteId: noteId || 'default-note',
         question: userMessage
       });

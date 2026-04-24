@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Brain, Timer, CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertTriangle, XCircle, FileWarning } from 'lucide-react';
@@ -61,7 +62,7 @@ const TestMode = () => {
 
   useEffect(() => {
     if (noteId === 'general') {
-      fetch('http://localhost:5000/api/notes')
+      fetch(API_BASE + '/api/notes')
         .then(res => res.json())
         .then(data => {
           if (data.notes && data.notes.length > 0) {
@@ -94,7 +95,7 @@ const TestMode = () => {
     setStep('loading');
     setErrorMsg(null);
     try {
-      const res = await fetch('http://localhost:5000/api/quiz/generate', {
+      const res = await fetch(API_BASE + '/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ noteId: targetId, difficulty, questionCount: 10 })
@@ -136,7 +137,7 @@ const TestMode = () => {
   const submitTest = async () => {
     setStep('evaluating');
     try {
-      const res = await fetch('http://localhost:5000/api/quiz/submit', {
+      const res = await fetch(API_BASE + '/api/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quizId, answers, timeTaken })

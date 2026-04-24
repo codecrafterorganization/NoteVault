@@ -1,3 +1,4 @@
+import API_BASE from '../config.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Clock, ChevronRight, Search, FileText } from 'lucide-react';
@@ -18,7 +19,7 @@ const Notebooks = () => {
   ];
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/notes')
+    fetch(API_BASE + '/api/notes')
       .then(res => res.json())
       .then(data => {
         if (data.notes && data.notes.length > 0) {
