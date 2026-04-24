@@ -298,27 +298,36 @@ Provide a clear explanation that a student can easily understand. Break down com
 async function generateQuiz(noteContent, difficulty = 'medium', questionCount = 10) {
   const difficultyInstructions = {
     easy: `
-      - Ask about facts directly stated in the notes
-      - Simple, clear question language
-      - Incorrect options are clearly wrong but plausible
-      - One obviously correct answer`,
+      DIFFICULTY: EASY
+      - Ask about facts DIRECTLY stated in the notes (direct recall)
+      - Questions must be SHORT — max 10 words per question
+      - Simple, clear language — avoid complex sentences
+      - Options should be brief (3–6 words each)
+      - One obviously correct answer; other options are clearly wrong but plausible`,
     medium: `
+      DIFFICULTY: MEDIUM (INTERMEDIATE)
+      - Questions are SHORT to MODERATE — max 15 words per question
       - Require understanding and application of concepts
       - Test connections between ideas in the notes
-      - Options are all plausible but one is best
-      - Some questions may require inference`,
+      - Options are all plausible but one is clearly best
+      - Some inference required — not just direct recall`,
     hard: `
-      - Require analysis and synthesis of multiple concepts
-      - Test deep understanding
-      - All options are plausible and nuanced
-      - Questions require reasoning, not just recall`
+      DIFFICULTY: HARD (ADVANCED)
+      - Questions are LONG and DETAILED — 20–30 words per question
+      - Require analysis and synthesis of MULTIPLE concepts from the notes
+      - Test deep understanding and reasoning
+      - All 4 options must be plausible and nuanced
+      - Questions require critical thinking, not just memory
+      - Explanations should be comprehensive (2–3 sentences)`
   };
-  
+
+  const levelKey = difficulty.toLowerCase();
+  const instructions = difficultyInstructions[levelKey] || difficultyInstructions.medium;
+
   const prompt = `
 You are an expert educator creating a quiz from student notes.
 
-DIFFICULTY: ${difficulty.toUpperCase()}
-${difficultyInstructions[difficulty.toLowerCase()] || difficultyInstructions.medium}
+${instructions}
 
 STUDENT NOTES:
 ${noteContent.substring(0, 6000)}
@@ -330,6 +339,7 @@ CRITICAL RULES:
 2. Each question has exactly 4 options (A, B, C, D)
 3. Only ONE option is correct
 4. Explanations must reference the notes
+5. STRICTLY follow the question length rules for this difficulty level
 
 Return ONLY valid JSON (no markdown, no backticks, no explanation):
 {
@@ -349,7 +359,7 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation):
   ]
 }`;
 
-  return await generateContent(prompt, { temperature: 0.3, maxTokens: 1500 });
+  return await generateContent(prompt, { temperature: 0.3, maxTokens: 3000 });
 }
 
 /**
