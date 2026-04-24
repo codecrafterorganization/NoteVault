@@ -35,15 +35,8 @@ const NAV_GROUPS = [
   {
     label: 'Assessment',
     items: [
-      { id: 'test', label: 'Test Mode', icon: Brain, route: '/test/general', desc: 'Auto-generated quizzes' },
       { id: 'battle', label: 'Battle Mode', icon: Swords, route: '/battle', desc: 'Real-time 1v1 battles', badge: 'NEW' },
       { id: 'performance', label: 'Performance', icon: Activity, route: '/performance', desc: 'Track your progress' },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { id: 'settings', label: 'Settings', icon: Settings, route: '/settings', desc: 'Preferences' },
     ],
   },
 ];

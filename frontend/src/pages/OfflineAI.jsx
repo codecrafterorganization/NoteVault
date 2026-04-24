@@ -1,60 +1,53 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cpu, WifiOff, ChevronLeft, Sparkles, Box, Shield, Zap, Globe } from 'lucide-react';
+import { Cpu, ChevronLeft, Download, Terminal, CheckCircle2, XCircle, Loader2, Copy, Check } from 'lucide-react';
 import gsap from 'gsap';
 
 const OfflineAI = () => {
   const navigate = useNavigate();
   const containerRef = useRef(null);
-  const iconRef = useRef(null);
-  const contentRef = useRef(null);
+  
+  // Status states: 'waiting' | 'ready' | 'error' | 'checking'
+  const [status, setStatus] = useState('waiting');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-    
     tl.fromTo(containerRef.current.querySelectorAll('.animate-item'),
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1.2, stagger: 0.15 }
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 }
     );
-
-    gsap.to(iconRef.current, {
-      y: -15,
-      duration: 3,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
-
-    // Floating particles animation
-    gsap.to(".particle", {
-      y: "random(-100, 100)",
-      x: "random(-100, 100)",
-      duration: "random(10, 20)",
-      repeat: -1,
-      yoyo: true,
-      ease: "none"
-    });
   }, []);
 
-  return (
-    <div ref={containerRef} className="w-full min-h-screen bg-[#050505] text-slate-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      {/* Premium Background Elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none opacity-50" />
-      <div className="absolute top-1/3 left-2/3 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none opacity-40" />
-      
-      {/* Animated Particles */}
-      {[...Array(20)].map((_, i) => (
-        <div 
-          key={i} 
-          className="particle absolute w-1 h-1 bg-white/10 rounded-full pointer-events-none"
-          style={{ 
-            top: `${Math.random() * 100}%`, 
-            left: `${Math.random() * 100}%`,
-            opacity: Math.random() * 0.5
-          }} 
-        />
-      ))}
+  const handleCopy = () => {
+    navigator.clipboard.writeText('ollama run gemma:2b');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
+  const checkStatus = async () => {
+    setStatus('checking');
+    try {
+      const response = await fetch('http://localhost:11434/api/tags', {
+        method: 'GET',
+        // Optional: reduce timeout if needed so it doesn't hang forever
+      });
+      if (response.ok) {
+        setStatus('ready');
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="w-full min-h-screen bg-[#050505] text-slate-100 flex flex-col items-center p-8 relative overflow-y-auto no-scrollbar">
+      {/* Premium Background Elements */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/5 rounded-full blur-[150px] pointer-events-none opacity-50" />
+      <div className="fixed top-1/3 left-2/3 w-[400px] h-[400px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none opacity-40" />
+      
       <button 
         onClick={() => navigate(-1)}
         className="absolute top-10 left-10 flex items-center gap-2 text-slate-500 hover:text-white transition-all group z-20"
@@ -65,79 +58,123 @@ const OfflineAI = () => {
         <span className="text-xs font-bold uppercase tracking-widest">Back</span>
       </button>
 
-      <div ref={contentRef} className="flex flex-col items-center text-center max-w-2xl z-10">
-        {/* Hero Icon */}
-        <div ref={iconRef} className="relative mb-12 animate-item">
-          <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
-          <div className="w-28 h-28 rounded-[40px] bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/10 flex items-center justify-center relative backdrop-blur-xl shadow-2xl">
-            <Cpu size={56} className="text-blue-400" />
-            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#0a0a0a] border border-white/10 rounded-2xl flex items-center justify-center shadow-lg">
-              <WifiOff size={20} className="text-purple-400" />
+      <div className="flex flex-col w-full max-w-3xl z-10 mt-16 animate-item">
+        
+        {/* Header Section */}
+        <div className="flex flex-col items-center text-center mb-12">
+          <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/10 flex items-center justify-center mb-6 backdrop-blur-xl shadow-2xl">
+            <Cpu size={36} className="text-blue-400" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+            Offline AI Setup
+          </h1>
+          <p className="text-lg text-slate-400 font-medium">
+            Run AI locally on your system without internet using Ollama.
+          </p>
+        </div>
+
+        {/* Status Card */}
+        <div className="w-full p-6 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 backdrop-blur-md animate-item">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-colors ${
+              status === 'ready' ? 'bg-emerald-500/10 border-emerald-500/30' :
+              status === 'error' ? 'bg-red-500/10 border-red-500/30' :
+              status === 'checking' ? 'bg-blue-500/10 border-blue-500/30' :
+              'bg-white/5 border-white/10'
+            }`}>
+              {status === 'ready' && <CheckCircle2 size={24} className="text-emerald-400" />}
+              {status === 'error' && <XCircle size={24} className="text-red-400" />}
+              {status === 'checking' && <Loader2 size={24} className="text-blue-400 animate-spin" />}
+              {status === 'waiting' && <Loader2 size={24} className="text-slate-400" />}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Status</span>
+              <span className={`text-lg font-bold ${
+                status === 'ready' ? 'text-emerald-400' :
+                status === 'error' ? 'text-red-400' :
+                status === 'checking' ? 'text-blue-400' :
+                'text-white'
+              }`}>
+                {status === 'ready' ? 'Offline AI is running' :
+                 status === 'error' ? 'Ollama not detected. Please start it.' :
+                 status === 'checking' ? 'Checking connection...' :
+                 'Waiting for Setup'}
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Coming Soon Tag */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 animate-item backdrop-blur-sm">
-          <Sparkles size={12} className="animate-pulse" />
-          Neural Edge Engine • Coming Soon
-        </div>
-
-        {/* Heading */}
-        <h1 className="text-6xl font-black tracking-tighter mb-8 bg-gradient-to-b from-white via-white to-white/30 bg-clip-text text-transparent animate-item leading-[1.1]">
-          Offline AI Mode
-        </h1>
-
-        {/* Description */}
-        <p className="text-xl text-slate-400 font-medium leading-relaxed mb-14 animate-item max-w-lg">
-          We are engineering a powerful, decentralized AI experience. Study anywhere, anytime, with total privacy and zero latency.
-        </p>
-
-        {/* Features Preview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full animate-item">
-           <div className="p-6 rounded-[28px] bg-white/[0.03] border border-white/5 flex flex-col gap-3 items-center hover:bg-white/[0.05] transition-colors group">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Box size={20} className="text-blue-400" />
-              </div>
-              <span className="text-sm font-bold text-white tracking-tight">On-Device LLM</span>
-              <span className="text-[11px] text-slate-500 leading-snug">Private inference running locally on your hardware.</span>
-           </div>
-           
-           <div className="p-6 rounded-[28px] bg-white/[0.03] border border-white/5 flex flex-col gap-3 items-center hover:bg-white/[0.05] transition-colors group">
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Shield size={20} className="text-purple-400" />
-              </div>
-              <span className="text-sm font-bold text-white tracking-tight">Vault Privacy</span>
-              <span className="text-[11px] text-slate-500 leading-snug">Your data stays in your vault. No cloud syncing required.</span>
-           </div>
-
-           <div className="p-6 rounded-[28px] bg-white/[0.03] border border-white/5 flex flex-col gap-3 items-center hover:bg-white/[0.05] transition-colors group">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Zap size={20} className="text-emerald-400" />
-              </div>
-              <span className="text-sm font-bold text-white tracking-tight">Zero Latency</span>
-              <span className="text-[11px] text-slate-500 leading-snug">Instant responses without internet dependency.</span>
-           </div>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-16 flex flex-col items-center gap-4 animate-item">
           <button 
-            onClick={() => navigate('/dashboard')}
-            className="px-10 py-4 bg-white text-black font-black text-sm rounded-full hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/10 uppercase tracking-widest"
+            onClick={checkStatus}
+            disabled={status === 'checking'}
+            className="px-6 py-3 rounded-xl bg-white text-black font-bold text-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2"
           >
-            Return to Dashboard
+            Check Offline AI Status
           </button>
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
-            <Globe size={10} />
-            NoteVault Global Network • Version 2.0 Alpha
-          </span>
         </div>
-      </div>
 
-      {/* Aesthetic Overlays */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        {/* Steps Container */}
+        <div className="flex flex-col gap-4 animate-item">
+          
+          {/* Step 1 */}
+          <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row gap-6 items-start hover:bg-white/[0.04] hover:border-white/10 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white shrink-0">1</div>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xl font-bold text-white">Install Ollama</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Download and install Ollama from the official website to run large language models locally.
+              </p>
+              <a 
+                href="https://ollama.com/download" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-colors w-fit"
+              >
+                <Download size={14} /> Download Ollama
+              </a>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row gap-6 items-start hover:bg-white/[0.04] hover:border-white/10 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white shrink-0">2</div>
+            <div className="flex flex-col gap-4 w-full">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xl font-bold text-white">Run Model Command</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Open your terminal or command prompt and run the following command to download and start the Gemma 2B model.
+                </p>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-[#0a0a0a] border border-white/10 rounded-2xl w-full">
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+                  <Terminal size={16} className="text-slate-500 shrink-0" />
+                  <code className="font-mono text-sm text-blue-400 whitespace-nowrap">ollama run gemma:2b</code>
+                </div>
+                <button 
+                  onClick={handleCopy}
+                  className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 transition-colors ml-4 shrink-0"
+                  title="Copy command"
+                >
+                  {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row gap-6 items-start hover:bg-white/[0.04] hover:border-white/10 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white shrink-0">3</div>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xl font-bold text-white">Verify Setup</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                After running the command, your offline AI will be ready. Click the "Check Offline AI Status" button above to verify the connection.
+              </p>
+            </div>
+          </div>
+
+        </div>
+        
+        {/* Footer padding */}
+        <div className="h-20" />
+      </div>
     </div>
   );
 };
